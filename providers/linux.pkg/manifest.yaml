@@ -24,7 +24,10 @@ capabilities:
 
 # Resource types provided
 resource_types:
-  - package
+  - type: package
+    primary_key: package  # Key field name for namespace syntax (e.g., linux: pkg: nginx: {})
+    schema: schemas/package.json
+    state_schema: schemas/package-state.json
 
 # WASM module configuration
 wasm:

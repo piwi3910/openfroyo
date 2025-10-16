@@ -348,6 +348,12 @@ func (cp *CUEParser) extractConfig(val cue.Value, sourceFiles []string) (*Parsed
 		}
 	}
 
+	// Extract provider namespace resources (e.g., linux: pkg: nginx: {})
+	// This enables concise syntax: linux: pkg: nginx: {} instead of verbose resource blocks
+	nsResources, nsErrors := cp.extractProviderNamespaces(val)
+	parsedConfig.Resources = append(parsedConfig.Resources, nsResources...)
+	parsedConfig.Errors = append(parsedConfig.Errors, nsErrors...)
+
 	return parsedConfig, nil
 }
 
@@ -371,6 +377,156 @@ func (cp *CUEParser) extractResource(id string, val cue.Value) (ResourceConfig, 
 	}
 
 	return resource, nil
+}
+
+// extractProviderNamespaces extracts resources from provider-specific namespaces.
+// Supports concise syntax like: linux: pkg: nginx: {}
+func (cp *CUEParser) extractProviderNamespaces(val cue.Value) ([]ResourceConfig, []ValidationError) {
+	var resources []ResourceConfig
+	var errors []ValidationError
+
+	// Known provider namespaces to check
+	// Convention: <provider>: <resource_type>: <resource_key>: { config }
+	providerNamespaces := []string{
+		"linux",  // linux.pkg, linux.service, linux.file, etc.
+		"aws",    // aws.ec2, aws.s3, etc. (future)
+		"gcp",    // gcp.compute, gcp.storage, etc. (future)
+		"azure",  // azure.vm, azure.storage, etc. (future)
+	}
+
+	for _, provider := range providerNamespaces {
+		providerVal := val.LookupPath(cue.ParsePath(provider))
+		if !providerVal.Exists() {
+			continue
+		}
+
+		// Iterate over resource types within this provider (e.g., "pkg", "service", "file")
+		iter, err := providerVal.Fields(cue.All())
+		if err != nil {
+			continue
+		}
+
+		for iter.Next() {
+			resourceType := iter.Selector().String()
+			resourceTypeVal := iter.Value()
+
+			// Extract resources for this provider.resourceType combination
+			typeResources, typeErrors := cp.expandProviderNamespace(
+				provider,
+				resourceType,
+				resourceTypeVal,
+			)
+			resources = append(resources, typeResources...)
+			errors = append(errors, typeErrors...)
+		}
+	}
+
+	return resources, errors
+}
+
+// expandProviderNamespace expands a provider namespace into resource configurations.
+// Example: linux: pkg: nginx: {} -> type: "linux.pkg::package", config: {package: "nginx", state: "present"}
+func (cp *CUEParser) expandProviderNamespace(provider, resourceType string, val cue.Value) ([]ResourceConfig, []ValidationError) {
+	var resources []ResourceConfig
+	var errors []ValidationError
+
+	// Determine the primary key field name for this provider/resource type
+	// For now, use hardcoded mappings. In future, this could be loaded from provider manifests.
+	primaryKey := cp.getPrimaryKeyField(provider, resourceType)
+
+	// Iterate over each resource key (e.g., nginx, apache2, postgresql)
+	iter, err := val.Fields(cue.All())
+	if err != nil {
+		errors = append(errors, ValidationError{
+			Path:     fmt.Sprintf("%s.%s", provider, resourceType),
+			Message:  fmt.Sprintf("failed to iterate resources: %v", err),
+			Severity: "error",
+		})
+		return resources, errors
+	}
+
+	for iter.Next() {
+		resourceKey := iter.Selector().String()
+		resourceVal := iter.Value()
+
+		// Start with primary key and default state
+		config := map[string]interface{}{
+			primaryKey: resourceKey,
+		}
+
+		// Add default state for package resources
+		if resourceType == "pkg" {
+			config["state"] = "present"
+		}
+
+		// Merge user-provided configuration
+		var userConfig map[string]interface{}
+		if err := resourceVal.Decode(&userConfig); err == nil {
+			for k, v := range userConfig {
+				config[k] = v
+			}
+		}
+
+		// Marshal config to JSON
+		configJSON, err := json.Marshal(config)
+		if err != nil {
+			errors = append(errors, ValidationError{
+				Path:     fmt.Sprintf("%s.%s.%s", provider, resourceType, resourceKey),
+				Message:  fmt.Sprintf("failed to marshal config: %v", err),
+				Severity: "error",
+			})
+			continue
+		}
+
+		// Create resource configuration
+		resource := ResourceConfig{
+			ID:     fmt.Sprintf("%s-%s-%s", provider, resourceType, resourceKey),
+			Type:   fmt.Sprintf("%s.%s::%s", provider, resourceType, resourceType),
+			Name:   resourceKey,
+			Config: configJSON,
+		}
+
+		resources = append(resources, resource)
+	}
+
+	return resources, errors
+}
+
+// getPrimaryKeyField returns the primary key field name for a provider/resource type combination.
+// This determines which config field receives the resource key from the namespace syntax.
+func (cp *CUEParser) getPrimaryKeyField(provider, resourceType string) string {
+	// Hardcoded mappings for now
+	// In the future, this should be loaded from provider manifest files
+	switch provider {
+	case "linux":
+		switch resourceType {
+		case "pkg":
+			return "package"
+		case "service":
+			return "name"
+		case "file":
+			return "path"
+		case "user":
+			return "username"
+		case "group":
+			return "groupname"
+		default:
+			return "name"
+		}
+	case "aws":
+		switch resourceType {
+		case "ec2":
+			return "instance_id"
+		case "s3":
+			return "bucket"
+		default:
+			return "name"
+		}
+	case "gcp", "azure":
+		return "name"
+	default:
+		return "name"
+	}
 }
 
 // convertCUEErrors converts CUE errors to ValidationError slice.
