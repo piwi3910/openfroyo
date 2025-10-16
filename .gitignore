@@ -1,7 +1,7 @@
 # Binaries
-froyo
+/froyo
 froyo-*
-micro-runner
+/micro-runner
 micro-runner-*
 *.exe
 *.dll
