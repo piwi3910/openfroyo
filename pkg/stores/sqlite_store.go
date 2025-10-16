@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+
+	// SQLite driver
 	_ "modernc.org/sqlite"
 )
 
@@ -52,7 +55,7 @@ func NewSQLiteStore(cfg Config) (*SQLiteStore, error) {
 	}, nil
 }
 
-// Init initializes the database connection and enables WAL mode
+// Init initializes the database connection and enables WAL mode.
 func (s *SQLiteStore) Init(ctx context.Context) error {
 	// Open database with SQLite-specific connection parameters
 	dsn := fmt.Sprintf("%s?_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000&_synchronous=NORMAL&_txlock=immediate", s.path)
@@ -69,13 +72,13 @@ func (s *SQLiteStore) Init(ctx context.Context) error {
 
 	// Verify connection and set PRAGMAs
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	// Ensure foreign keys are enabled (connection-level setting)
 	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
@@ -91,8 +94,8 @@ func (s *SQLiteStore) Close() error {
 	return nil
 }
 
-// Migrate runs database migrations
-func (s *SQLiteStore) Migrate(ctx context.Context) error {
+// Migrate runs database migrations.
+func (s *SQLiteStore) Migrate(_ context.Context) error {
 	if s.db == nil {
 		return fmt.Errorf("database not initialized")
 	}
@@ -116,7 +119,7 @@ func (s *SQLiteStore) Migrate(ctx context.Context) error {
 	}
 
 	// Run migrations
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
