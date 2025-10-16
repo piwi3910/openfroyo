@@ -1,0 +1,56 @@
+# Binaries
+froyo
+froyo-*
+micro-runner
+micro-runner-*
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+*.out
+
+# Go workspace file
+go.work
+
+# Coverage
+*.coverprofile
+coverage.txt
+coverage.html
+
+# Data directory
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+bin/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# WASM build artifacts
+*.wasm
+
+# Keys and secrets
+*.key
+*.pem
+agekey
