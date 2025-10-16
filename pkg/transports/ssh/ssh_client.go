@@ -42,12 +42,12 @@ type connectionPool struct {
 
 // pooledConnection wraps an SSH client connection with metadata.
 type pooledConnection struct {
-	client      *ssh.Client
-	createdAt   time.Time
-	lastUsedAt  time.Time
-	inUse       bool
-	usageCount  int
-	mu          sync.Mutex
+	client     *ssh.Client
+	createdAt  time.Time
+	lastUsedAt time.Time
+	inUse      bool
+	usageCount int
+	mu         sync.Mutex
 }
 
 // NewSSHClient creates a new SSH transport client.
