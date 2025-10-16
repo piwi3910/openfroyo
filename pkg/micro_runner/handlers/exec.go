@@ -27,11 +27,38 @@ func (h *ExecHandler) Handle(ctx context.Context, params *protocol.ExecParams, e
 
 	// Build command
 	var cmd *exec.Cmd
-	if len(params.Args) > 0 {
-		cmd = exec.CommandContext(ctx, params.Command, params.Args...)
+
+	// Handle sudo if requested
+	if params.UseSudo {
+		if params.SudoPassword != "" {
+			// Use sudo with password via stdin
+			if len(params.Args) > 0 {
+				// sudo -S command args
+				fullCmd := append([]string{"-S", params.Command}, params.Args...)
+				cmd = exec.CommandContext(ctx, "sudo", fullCmd...)
+			} else {
+				// sudo -S sh -c "command"
+				cmd = exec.CommandContext(ctx, "sudo", "-S", shell, "-c", params.Command)
+			}
+			// Set up stdin to provide password
+			cmd.Stdin = bytes.NewBufferString(params.SudoPassword + "\n")
+		} else {
+			// NOPASSWD sudo
+			if len(params.Args) > 0 {
+				fullCmd := append([]string{params.Command}, params.Args...)
+				cmd = exec.CommandContext(ctx, "sudo", fullCmd...)
+			} else {
+				cmd = exec.CommandContext(ctx, "sudo", shell, "-c", params.Command)
+			}
+		}
 	} else {
-		// If no args, run command through shell
-		cmd = exec.CommandContext(ctx, shell, "-c", params.Command)
+		// Normal execution without sudo
+		if len(params.Args) > 0 {
+			cmd = exec.CommandContext(ctx, params.Command, params.Args...)
+		} else {
+			// If no args, run command through shell
+			cmd = exec.CommandContext(ctx, shell, "-c", params.Command)
+		}
 	}
 
 	// Set working directory

@@ -54,7 +54,7 @@ func (e *executor) execute(ctx context.Context, cmd string, useSudo bool, sudoPa
 		Msg("executing command")
 
 	// Get the SSH client
-	sshClient, err := e.client.getClient()
+	sshClient, err := e.client.GetClient()
 	if err != nil {
 		return "", "", err
 	}
@@ -149,7 +149,7 @@ func (c *SSHClient) StartInteractiveSession(ctx context.Context) (stdin io.Write
 	log.Debug().Msg("starting interactive session")
 
 	// Get the SSH client
-	sshClient, err := c.getClient()
+	sshClient, err := c.GetClient()
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

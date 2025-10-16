@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -54,14 +55,37 @@ func (h *SudoersEnsureHandler) Handle(ctx context.Context, params *protocol.Sudo
 		}
 
 		// Write the rule
-		if err := os.WriteFile(filePath, []byte(rule), 0440); err != nil {
-			return nil, fmt.Errorf("failed to write sudoers file: %w", err)
+		if params.UseSudo {
+			// Write to temp file in /tmp (accessible to current user)
+			tmpFile := fmt.Sprintf("/tmp/froyo-sudoers-%d.tmp", os.Getpid())
+			if err := os.WriteFile(tmpFile, []byte(rule), 0644); err != nil {
+				return nil, fmt.Errorf("failed to write temp file: %w", err)
+			}
+			defer os.Remove(tmpFile) // Clean up temp file
+
+			// Move temp file to final location with sudo
+			if err := runSudoCmd(ctx, params.SudoPassword, "mv", tmpFile, filePath); err != nil {
+				return nil, fmt.Errorf("failed to move sudoers file: %w", err)
+			}
+
+			// Set permissions with sudo
+			if err := runSudoCmd(ctx, params.SudoPassword, "chmod", "0440", filePath); err != nil {
+				return nil, fmt.Errorf("failed to set sudoers permissions: %w", err)
+			}
+		} else {
+			if err := os.WriteFile(filePath, []byte(rule), 0440); err != nil {
+				return nil, fmt.Errorf("failed to write sudoers file: %w", err)
+			}
 		}
 
 		// Validate sudoers syntax
-		if err := h.validateSudoers(ctx, filePath); err != nil {
+		if err := h.validateSudoers(ctx, filePath, params.UseSudo, params.SudoPassword); err != nil {
 			// Remove invalid file
-			os.Remove(filePath)
+			if params.UseSudo {
+				runSudoCmd(ctx, params.SudoPassword, "rm", "-f", filePath)
+			} else {
+				os.Remove(filePath)
+			}
 			return nil, fmt.Errorf("invalid sudoers syntax: %w", err)
 		}
 
@@ -109,11 +133,42 @@ func (h *SudoersEnsureHandler) buildSudoersRule(user string, commands []string, 
 	return b.String()
 }
 
-func (h *SudoersEnsureHandler) validateSudoers(ctx context.Context, filePath string) error {
+func (h *SudoersEnsureHandler) validateSudoers(ctx context.Context, filePath string, useSudo bool, sudoPassword string) error {
 	// Use visudo to validate syntax
-	cmd := exec.CommandContext(ctx, "visudo", "-c", "-f", filePath)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("visudo validation failed: %w", err)
+	var cmd *exec.Cmd
+	if useSudo {
+		cmd = exec.CommandContext(ctx, "sudo", "-S", "visudo", "-c", "-f", filePath)
+		if sudoPassword != "" {
+			cmd.Stdin = bytes.NewBufferString(sudoPassword + "\n")
+		}
+	} else {
+		cmd = exec.CommandContext(ctx, "visudo", "-c", "-f", filePath)
 	}
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("visudo validation failed: %w (stderr: %s)", err, stderr.String())
+	}
+	return nil
+}
+
+// runSudoCmd executes a command with sudo
+func runSudoCmd(ctx context.Context, sudoPassword string, command string, args ...string) error {
+	cmdArgs := append([]string{"-S", command}, args...)
+	cmd := exec.CommandContext(ctx, "sudo", cmdArgs...)
+
+	if sudoPassword != "" {
+		cmd.Stdin = bytes.NewBufferString(sudoPassword + "\n")
+	}
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w (stderr: %s)", err, stderr.String())
+	}
+
 	return nil
 }

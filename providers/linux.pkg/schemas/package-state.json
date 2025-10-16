@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://openfroyo.io/schemas/linux.pkg/package-state.json",
+  "title": "Linux Package State",
+  "description": "Represents the actual state of a Linux package on the system",
+  "type": "object",
+  "required": ["package", "installed", "manager"],
+  "properties": {
+    "package": {
+      "type": "string",
+      "description": "Name of the package",
+      "minLength": 1
+    },
+    "installed": {
+      "type": "boolean",
+      "description": "Whether the package is currently installed on the system"
+    },
+    "version": {
+      "type": "string",
+      "description": "Currently installed version of the package (empty if not installed)",
+      "examples": [
+        "1.18.0-1ubuntu1",
+        "14.5-1",
+        "3.9.5-1ubuntu0.1"
+      ]
+    },
+    "manager": {
+      "type": "string",
+      "description": "Package manager that manages this package",
+      "enum": ["apt", "dnf", "yum", "zypper"]
+    },
+    "available_version": {
+      "type": "string",
+      "description": "Latest available version in configured repositories",
+      "examples": [
+        "1.18.0-1ubuntu1",
+        "14.6-1"
+      ]
+    },
+    "repository": {
+      "type": "string",
+      "description": "Repository the package is installed from",
+      "examples": [
+        "main",
+        "universe",
+        "epel",
+        "updates"
+      ]
+    },
+    "architecture": {
+      "type": "string",
+      "description": "Package architecture",
+      "examples": [
+        "amd64",
+        "x86_64",
+        "arm64",
+        "all"
+      ]
+    },
+    "size": {
+      "type": "integer",
+      "description": "Installed size in bytes",
+      "minimum": 0
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of package dependencies",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Package description from metadata"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "package": "nginx",
+      "installed": true,
+      "version": "1.18.0-1ubuntu1",
+      "manager": "apt",
+      "available_version": "1.18.0-1ubuntu1",
+      "repository": "main",
+      "architecture": "amd64"
+    },
+    {
+      "package": "postgresql-14",
+      "installed": false,
+      "manager": "apt"
+    },
+    {
+      "package": "httpd",
+      "installed": true,
+      "version": "2.4.51-7.el9",
+      "manager": "dnf",
+      "repository": "appstream",
+      "architecture": "x86_64"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# Build outputs
+plugin.wasm
+*.wasm
+
+# Package archives
+*.tar.gz
+*.tgz
+*.zip
+
+# Test outputs
+*.test
+coverage.out
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

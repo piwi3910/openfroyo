@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"syscall"
@@ -43,14 +45,36 @@ func (h *FileWriteHandler) Handle(ctx context.Context, params *protocol.FileWrit
 
 	// Create parent directory if needed
 	dir := filepath.Dir(params.Path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create directory: %w", err)
+	if params.UseSudo {
+		// Use sudo to create directory
+		if err := runSudoCommand(ctx, params.SudoPassword, "mkdir", "-p", dir); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+	} else {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
 	}
 
 	// Write file
 	content := []byte(params.Content)
-	if err := os.WriteFile(params.Path, content, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write file: %w", err)
+	if params.UseSudo {
+		// Write via sudo using tee
+		cmd := exec.CommandContext(ctx, "sudo", "-S", "tee", params.Path)
+		if params.SudoPassword != "" {
+			cmd.Stdin = bytes.NewReader(append([]byte(params.SudoPassword+"\n"), content...))
+		} else {
+			cmd.Stdin = bytes.NewReader(content)
+		}
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return nil, fmt.Errorf("failed to write file: %w (stderr: %s)", err, stderr.String())
+		}
+	} else {
+		if err := os.WriteFile(params.Path, content, 0644); err != nil {
+			return nil, fmt.Errorf("failed to write file: %w", err)
+		}
 	}
 
 	result.BytesWritten = int64(len(content))
@@ -62,15 +86,35 @@ func (h *FileWriteHandler) Handle(ctx context.Context, params *protocol.FileWrit
 		if err != nil {
 			return nil, fmt.Errorf("invalid mode: %w", err)
 		}
-		if err := os.Chmod(params.Path, os.FileMode(mode)); err != nil {
-			return nil, fmt.Errorf("failed to set mode: %w", err)
+		if params.UseSudo {
+			if err := runSudoCommand(ctx, params.SudoPassword, "chmod", params.Mode, params.Path); err != nil {
+				return nil, fmt.Errorf("failed to set mode: %w", err)
+			}
+		} else {
+			if err := os.Chmod(params.Path, os.FileMode(mode)); err != nil {
+				return nil, fmt.Errorf("failed to set mode: %w", err)
+			}
 		}
 	}
 
 	// Set ownership if specified (requires root)
 	if params.Owner != "" || params.Group != "" {
-		if err := setOwnership(params.Path, params.Owner, params.Group); err != nil {
-			return nil, fmt.Errorf("failed to set ownership: %w", err)
+		ownership := params.Owner
+		if params.Group != "" {
+			if ownership == "" {
+				ownership = ":" + params.Group
+			} else {
+				ownership += ":" + params.Group
+			}
+		}
+		if params.UseSudo {
+			if err := runSudoCommand(ctx, params.SudoPassword, "chown", ownership, params.Path); err != nil {
+				return nil, fmt.Errorf("failed to set ownership: %w", err)
+			}
+		} else {
+			if err := setOwnership(params.Path, params.Owner, params.Group); err != nil {
+				return nil, fmt.Errorf("failed to set ownership: %w", err)
+			}
 		}
 	}
 
@@ -168,5 +212,24 @@ func setOwnership(path, owner, group string) error {
 	// This is a simplified implementation
 	// In production, you'd use user.Lookup() and strconv to get UID/GID
 	// For now, we'll skip this as it requires root privileges
+	return nil
+}
+
+// runSudoCommand executes a command with sudo
+func runSudoCommand(ctx context.Context, sudoPassword string, command string, args ...string) error {
+	cmdArgs := append([]string{"-S", command}, args...)
+	cmd := exec.CommandContext(ctx, "sudo", cmdArgs...)
+
+	if sudoPassword != "" {
+		cmd.Stdin = bytes.NewBufferString(sudoPassword + "\n")
+	}
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w (stderr: %s)", err, stderr.String())
+	}
+
 	return nil
 }

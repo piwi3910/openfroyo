@@ -1,8 +1,13 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 
+	"github.com/openfroyo/openfroyo/pkg/engine"
+	"github.com/openfroyo/openfroyo/pkg/stores"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -80,23 +85,91 @@ This command:
 				Int("port", port).
 				Msg("Onboarding host via SSH")
 
-			// TODO: Implement SSH onboarding
-			// - Establish SSH connection with password auth
-			// - Upload micro-runner binary (verify signature)
-			// - Execute micro-runner
-			// - Send commands via stdio protocol:
-			//   - Create user if specified
-			//   - Install SSH authorized_keys
-			//   - Configure sudoers
-			//   - Optionally disable password auth
-			//   - Restart sshd safely
-			// - Register host in inventory with labels
-			// - Store host fingerprint and key handle
-			// - Verify micro-runner self-deletion
+			ctx := context.Background()
 
-			fmt.Println("Not implemented yet: SSH onboarding")
-			fmt.Printf("Would onboard host=%s, user=%s, create_user=%s, lock_down=%v, labels=%v\n",
-				host, user, createUser, lockDown, labels)
+			// Load configuration
+			dataDir := "./data"
+			if configPath != "" {
+				dataDir = filepath.Join(filepath.Dir(configPath), "data")
+			}
+
+			// Initialize store
+			dbPath := filepath.Join(dataDir, "openfroyo.db")
+			store, err := stores.NewSQLiteStore(stores.Config{
+				Path: dbPath,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create store: %w", err)
+			}
+
+			if err := store.Init(ctx); err != nil {
+				return fmt.Errorf("failed to initialize store: %w", err)
+			}
+			defer store.Close()
+
+			// Parse labels
+			labelMap := make(map[string]string)
+			for _, label := range labels {
+				parts := strings.SplitN(label, "=", 2)
+				if len(parts) == 2 {
+					labelMap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+				}
+			}
+
+			// Base runner binary path - the actual architecture-specific binary
+			// will be selected automatically based on target host detection
+			runnerBinaryPath := filepath.Join("./bin", "micro-runner")
+
+			// Create onboarding service
+			onboardingSvc := engine.NewOnboardingService(store, dataDir, runnerBinaryPath)
+
+			// Perform onboarding
+			fmt.Printf("🚀 Starting onboarding for %s...\n\n", host)
+
+			result, err := onboardingSvc.OnboardHost(ctx, &engine.OnboardingConfig{
+				Host:                host,
+				Port:                port,
+				User:                user,
+				Password:            password,
+				KeyName:             keyName,
+				CreateUser:          createUser,
+				SudoRules:           sudoRules,
+				DisablePasswordAuth: lockDown,
+				Labels:              labelMap,
+			})
+
+			if err != nil {
+				return fmt.Errorf("onboarding failed: %w", err)
+			}
+
+			// Display results
+			fmt.Printf("\n✅ Host onboarded successfully!\n\n")
+			fmt.Printf("Host ID:              %s\n", result.HostID)
+			fmt.Printf("Address:              %s:%d\n", result.Host, port)
+			fmt.Printf("User:                 %s\n", result.User)
+			fmt.Printf("Key Path:             %s\n", result.KeyPath)
+			fmt.Printf("Public Key Installed: %v\n", result.PublicKeyInstalled)
+			if result.UserCreated {
+				fmt.Printf("User Created:         %v\n", result.UserCreated)
+			}
+			if result.SudoersConfigured {
+				fmt.Printf("Sudoers Configured:   %v\n", result.SudoersConfigured)
+			}
+			if result.SSHHardened {
+				fmt.Printf("SSH Hardened:         %v\n", result.SSHHardened)
+			}
+			if len(result.Labels) > 0 {
+				fmt.Printf("Labels:\n")
+				for k, v := range result.Labels {
+					fmt.Printf("  %s: %s\n", k, v)
+				}
+			}
+
+			fmt.Printf("\n💡 Next steps:\n")
+			fmt.Printf("  1. Collect facts from this host:\n")
+			fmt.Printf("     froyo facts collect --target %s\n\n", result.HostID)
+			fmt.Printf("  2. Test SSH connection with key:\n")
+			fmt.Printf("     ssh -i %s %s@%s\n\n", result.KeyPath, result.User, result.Host)
 
 			return nil
 		},

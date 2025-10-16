@@ -1,0 +1,71 @@
+name: linux.pkg
+version: 1.0.0
+description: Linux package management provider supporting apt, dnf, yum, and zypper
+author: OpenFroyo
+license: Apache-2.0
+repository: https://github.com/openfroyo/openfroyo
+homepage: https://openfroyo.io
+
+# Provider metadata
+metadata:
+  type: provider
+  category: system
+  platforms:
+    - linux
+  package_managers:
+    - apt        # Debian, Ubuntu
+    - dnf        # Fedora, RHEL 8+
+    - yum        # CentOS, RHEL 7
+    - zypper     # openSUSE, SLES
+
+# Required capabilities for this provider
+capabilities:
+  - exec:micro-runner
+
+# Resource types provided
+resource_types:
+  - package
+
+# WASM module configuration
+wasm:
+  entrypoint: plugin.wasm
+  runtime: wasi
+  memory:
+    initial: 1MB
+    maximum: 10MB
+  timeout:
+    default: 300s  # 5 minutes for package operations
+    maximum: 600s  # 10 minutes max
+
+# Provider configuration schema
+config_schema:
+  type: object
+  properties:
+    default_manager:
+      type: string
+      description: Default package manager to use (auto-detected if not specified)
+      enum: [apt, dnf, yum, zypper]
+    update_cache:
+      type: boolean
+      description: Whether to update package cache before operations
+      default: true
+    cache_validity_minutes:
+      type: integer
+      description: How long the package cache is considered fresh (in minutes)
+      default: 60
+      minimum: 0
+
+# Dependencies and requirements
+requirements:
+  min_openfroyo_version: "0.1.0"
+  micro_runner_version: ">=0.1.0"
+
+# Checksums (to be filled during build)
+checksums:
+  plugin.wasm: ""  # SHA256 checksum of the WASM module
+
+# Build information (to be filled during build)
+build:
+  timestamp: ""
+  commit: ""
+  tinygo_version: ""

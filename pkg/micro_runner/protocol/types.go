@@ -120,14 +120,16 @@ type ExitMessage struct {
 
 // ExecParams contains parameters for shell command execution.
 type ExecParams struct {
-	Command     string            `json:"command"`
-	Args        []string          `json:"args,omitempty"`
-	WorkDir     string            `json:"work_dir,omitempty"`
-	Env         map[string]string `json:"env,omitempty"`
-	Shell       string            `json:"shell,omitempty"` // defaults to /bin/sh
-	CaptureOut  bool              `json:"capture_out"`
-	CaptureErr  bool              `json:"capture_err"`
-	StreamLines bool              `json:"stream_lines"`
+	Command      string            `json:"command"`
+	Args         []string          `json:"args,omitempty"`
+	WorkDir      string            `json:"work_dir,omitempty"`
+	Env          map[string]string `json:"env,omitempty"`
+	Shell        string            `json:"shell,omitempty"` // defaults to /bin/sh
+	CaptureOut   bool              `json:"capture_out"`
+	CaptureErr   bool              `json:"capture_err"`
+	StreamLines  bool              `json:"stream_lines"`
+	UseSudo      bool              `json:"use_sudo,omitempty"`       // execute with sudo
+	SudoPassword string            `json:"sudo_password,omitempty"` // sudo password if needed
 }
 
 // ExecResult contains the result of command execution.
@@ -141,13 +143,15 @@ type ExecResult struct {
 
 // FileWriteParams contains parameters for writing a file.
 type FileWriteParams struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
-	Mode    string `json:"mode,omitempty"`    // e.g., "0644"
-	Owner   string `json:"owner,omitempty"`   // e.g., "root"
-	Group   string `json:"group,omitempty"`   // e.g., "root"
-	Backup  bool   `json:"backup,omitempty"`  // create .bak before write
-	Create  bool   `json:"create"`            // create if not exists
+	Path         string `json:"path"`
+	Content      string `json:"content"`
+	Mode         string `json:"mode,omitempty"`          // e.g., "0644"
+	Owner        string `json:"owner,omitempty"`         // e.g., "root"
+	Group        string `json:"group,omitempty"`         // e.g., "root"
+	Backup       bool   `json:"backup,omitempty"`        // create .bak before write
+	Create       bool   `json:"create"`                  // create if not exists
+	UseSudo      bool   `json:"use_sudo,omitempty"`      // execute with sudo
+	SudoPassword string `json:"sudo_password,omitempty"` // sudo password if needed
 }
 
 // FileWriteResult contains the result of file write operation.
@@ -209,10 +213,12 @@ type ServiceReloadResult struct {
 
 // SudoersEnsureParams contains parameters for sudoers management.
 type SudoersEnsureParams struct {
-	User     string   `json:"user"`
-	Commands []string `json:"commands"` // allowed commands (full paths)
-	NoPasswd bool     `json:"no_passwd"`
-	State    string   `json:"state"` // present, absent
+	User         string   `json:"user"`
+	Commands     []string `json:"commands"` // allowed commands (full paths)
+	NoPasswd     bool     `json:"no_passwd"`
+	State        string   `json:"state"` // present, absent
+	UseSudo      bool     `json:"use_sudo,omitempty"`       // execute with sudo
+	SudoPassword string   `json:"sudo_password,omitempty"` // sudo password if needed
 }
 
 // SudoersEnsureResult contains the result of sudoers operation.

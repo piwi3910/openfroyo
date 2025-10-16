@@ -112,7 +112,7 @@ func (c *SSHClient) ComputeChecksum(ctx context.Context, remotePath string) (str
 
 // createSFTPClient creates a new SFTP client.
 func (f *fileTransfer) createSFTPClient() (*sftp.Client, error) {
-	sshClient, err := f.client.getClient()
+	sshClient, err := f.client.GetClient()
 	if err != nil {
 		return nil, err
 	}

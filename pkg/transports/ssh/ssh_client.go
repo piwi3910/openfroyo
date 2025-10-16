@@ -373,8 +373,8 @@ func (c *SSHClient) GetConnectionInfo() ConnectionInfo {
 	}
 }
 
-// getClient returns the underlying SSH client (used internally by executor and file transfer).
-func (c *SSHClient) getClient() (*ssh.Client, error) {
+// GetClient returns the underlying SSH client (used internally by executor and file transfer).
+func (c *SSHClient) GetClient() (*ssh.Client, error) {
 	c.connMu.RLock()
 	defer c.connMu.RUnlock()
 

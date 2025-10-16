@@ -110,7 +110,7 @@ func DefaultConfig(host string, user string) *Config {
 		StrictHostKeyChecking:   true,
 		ConnectionTimeout:       30 * time.Second,
 		CommandTimeout:          5 * time.Minute,
-		KeepAliveInterval:       30 * time.Second,
+		KeepAliveInterval:       0, // Disabled by default
 		MaxKeepAliveRetries:     3,
 		EnableConnectionPooling: true,
 		MaxPoolSize:             5,
@@ -198,7 +198,20 @@ func (c *Config) BuildSSHClientConfig() (*ssh.ClientConfig, error) {
 
 	switch c.AuthMethod {
 	case AuthMethodPassword:
+		// Add password authentication
 		authMethods = append(authMethods, ssh.Password(c.Password))
+
+		// Add keyboard-interactive authentication (required by many SSH servers)
+		// This handles the common "Password:" prompt
+		authMethods = append(authMethods, ssh.KeyboardInteractive(
+			func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+				answers := make([]string, len(questions))
+				for i := range answers {
+					answers[i] = c.Password
+				}
+				return answers, nil
+			},
+		))
 
 	case AuthMethodKey:
 		keyBytes, err := os.ReadFile(c.PrivateKeyPath)

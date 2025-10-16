@@ -1,0 +1,18 @@
+# OpenFroyo Configuration
+
+# Data directory
+data_dir: ./data
+
+# Database settings
+database:
+  path: data/openfroyo.db
+
+# Telemetry settings
+telemetry:
+  enabled: true
+  log_level: info
+
+# Micro-runner settings
+micro_runner:
+  binary_path: ./bin/micro-runner
+  timeout: 600

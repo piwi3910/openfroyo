@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://openfroyo.io/schemas/linux.pkg/package.json",
+  "title": "Linux Package Resource",
+  "description": "Manages Linux packages across multiple package managers (apt, dnf, yum, zypper)",
+  "type": "object",
+  "required": ["package"],
+  "properties": {
+    "package": {
+      "type": "string",
+      "description": "Name of the package to manage",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9._+-]+$",
+      "examples": [
+        "nginx",
+        "postgresql-14",
+        "python3-pip"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "description": "Desired state of the package",
+      "enum": ["present", "absent", "latest"],
+      "default": "present",
+      "examples": [
+        "present",
+        "absent",
+        "latest"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "description": "Specific version to install. Cannot be used with state 'absent' or 'latest'",
+      "minLength": 1,
+      "examples": [
+        "1.18.0",
+        "14.5-1ubuntu1",
+        "3.9.5-1"
+      ]
+    },
+    "repository": {
+      "type": "string",
+      "description": "Specific repository to use for the package (optional)",
+      "minLength": 1,
+      "examples": [
+        "main",
+        "universe",
+        "epel",
+        "updates"
+      ]
+    },
+    "manager": {
+      "type": "string",
+      "description": "Package manager to use. If not specified, will be auto-detected based on the system",
+      "enum": ["apt", "dnf", "yum", "zypper"],
+      "examples": [
+        "apt",
+        "dnf"
+      ]
+    },
+    "options": {
+      "type": "array",
+      "description": "Additional package manager specific options/flags",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        ["--no-install-recommends"],
+        ["--enablerepo=epel"],
+        ["-y", "--skip-broken"]
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "absent"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": ["version"]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "latest"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": ["version"]
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "package": "nginx",
+      "state": "present"
+    },
+    {
+      "package": "nginx",
+      "state": "present",
+      "version": "1.18.0-1ubuntu1"
+    },
+    {
+      "package": "postgresql-14",
+      "state": "latest",
+      "manager": "apt"
+    },
+    {
+      "package": "httpd",
+      "state": "absent"
+    },
+    {
+      "package": "docker-ce",
+      "state": "present",
+      "repository": "docker-ce-stable",
+      "options": ["--enablerepo=docker-ce-stable"]
+    }
+  ]
+}
