@@ -1,0 +1,12 @@
+name: group
+version: 1.0.0
+description: Manage system groups
+
+steps:
+  - name: Manage group
+    wasm: wasm/group.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      gid: "{{ var.gid | default('') }}"
+      system: "{{ var.system | default(false) }}"

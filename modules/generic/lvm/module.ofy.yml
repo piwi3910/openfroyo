@@ -1,0 +1,15 @@
+name: lvm
+version: 1.0.0
+description: Manage LVM (Logical Volume Manager) on remote hosts
+
+steps:
+  - name: Manage LVM
+    wasm: wasm/lvm.wasm
+    vars:
+      vg: "{{ var.vg | default('') }}"
+      lv: "{{ var.lv | default('') }}"
+      pvs: "{{ var.pvs | default([]) }}"
+      size: "{{ var.size | default('') }}"
+      state: "{{ var.state | default('present') }}"
+      force: "{{ var.force | default(false) }}"
+      opts: "{{ var.opts | default('') }}"

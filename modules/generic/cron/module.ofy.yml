@@ -1,0 +1,19 @@
+name: cron
+version: 1.0.0
+description: Manage cron jobs
+
+steps:
+  - name: Manage cron job
+    wasm: wasm/cron.wasm
+    vars:
+      name: "{{ var.name }}"
+      job: "{{ var.job }}"
+      state: "{{ var.state | default('present') }}"
+      user: "{{ var.user | default('root') }}"
+      minute: "{{ var.minute | default('*') }}"
+      hour: "{{ var.hour | default('*') }}"
+      day: "{{ var.day | default('*') }}"
+      month: "{{ var.month | default('*') }}"
+      weekday: "{{ var.weekday | default('*') }}"
+      special_time: "{{ var.special_time | default('') }}"
+      disabled: "{{ var.disabled | default(false) }}"

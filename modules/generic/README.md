@@ -12,7 +12,7 @@ All modules follow the **shell_exec pattern**:
 
 This architecture allows adding unlimited modules without modifying the runner.
 
-## Available Modules (28 Total)
+## Available Modules (45 Total)
 
 ### Command & Script Execution
 - **command** - Execute shell commands
@@ -24,6 +24,34 @@ This architecture allows adding unlimited modules without modifying the runner.
 - **npm** - Manage Node.js packages (npm)
 - **pip** - Manage Python packages (pip)
 - **yarn** - Manage Node.js packages (Yarn)
+
+### User & Group Management
+- **user** - Manage system users
+- **group** - Manage system groups
+- **authorized_keys** - Manage SSH authorized_keys
+
+### Firewall Management
+- **firewalld** - Manage firewalld (RHEL/CentOS/Fedora)
+- **iptables** - Manage iptables rules
+- **ufw** - Manage UFW (Ubuntu/Debian)
+
+### System Services
+- **systemd** - Manage systemd services
+- **cron** - Manage cron jobs
+
+### System Configuration
+- **hostname** - Set system hostname
+- **timezone** - Configure timezone
+- **sysctl** - Manage kernel parameters
+- **selinux** - Configure SELinux
+
+### Storage Management
+- **filesystems** - Manage mounts and fstab
+- **lvm** - Manage LVM (Physical/Volume/Logical volumes)
+
+### Utilities
+- **ping** - Test network connectivity
+- **reboot** - Reboot/shutdown systems
 
 ### File Management
 - **file** - Manage files and directories (create, delete, permissions)

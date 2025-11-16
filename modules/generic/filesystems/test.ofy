@@ -1,0 +1,51 @@
+name: Test Filesystems Module
+version: 1.0.0
+
+# Test filesystem mount management
+
+inventory:
+  - hosts:
+      - localhost
+
+defaults:
+  ssh_user: root
+
+run:
+  # Test 1: Mount a filesystem
+  - name: Mount /dev/sdb1 to /mnt/data
+    module: generic/filesystems
+    vars:
+      device: "/dev/sdb1"
+      path: "/mnt/data"
+      fstype: "ext4"
+      opts: "defaults,noatime"
+      state: "mounted"
+      fstab: true
+
+  # Test 2: Ensure filesystem entry exists in fstab but not mounted
+  - name: Add filesystem to fstab only
+    module: generic/filesystems
+    vars:
+      device: "UUID=12345678-1234-1234-1234-123456789abc"
+      path: "/mnt/backup"
+      fstype: "xfs"
+      state: "present"
+      fstab: true
+
+  # Test 3: Unmount a filesystem
+  - name: Unmount /mnt/temp
+    module: generic/filesystems
+    vars:
+      device: "/dev/sdc1"
+      path: "/mnt/temp"
+      fstype: "ext4"
+      state: "unmounted"
+
+  # Test 4: Remove filesystem completely
+  - name: Remove filesystem and fstab entry
+    module: generic/filesystems
+    vars:
+      device: "/dev/sdd1"
+      path: "/mnt/old"
+      fstype: "ext4"
+      state: "absent"

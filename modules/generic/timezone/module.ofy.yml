@@ -1,0 +1,9 @@
+name: timezone
+version: 1.0.0
+description: Configure system timezone
+
+steps:
+  - name: Set timezone
+    wasm: wasm/timezone.wasm
+    vars:
+      name: "{{ var.name }}"

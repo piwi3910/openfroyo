@@ -1,0 +1,19 @@
+name: user
+version: 1.0.0
+description: Manage system users
+
+steps:
+  - name: Manage user
+    wasm: wasm/user.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      uid: "{{ var.uid | default('') }}"
+      group: "{{ var.group | default('') }}"
+      groups: "{{ var.groups | default([]) }}"
+      shell: "{{ var.shell | default('/bin/bash') }}"
+      home: "{{ var.home | default('') }}"
+      create_home: "{{ var.create_home | default(true) }}"
+      password: "{{ var.password | default('') }}"
+      comment: "{{ var.comment | default('') }}"
+      system: "{{ var.system | default(false) }}"

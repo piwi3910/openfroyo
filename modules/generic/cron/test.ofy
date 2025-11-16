@@ -1,0 +1,86 @@
+inventory:
+  source: inline
+  hosts:
+    localhost:
+      host: localhost
+      user: "{{ env.USER }}"
+
+defaults:
+  max_parallel: 1
+
+run:
+  # Example 1: Daily backup at 2 AM
+  - task: Daily database backup
+    module: cron
+    vars:
+      name: daily-db-backup
+      job: /usr/local/bin/backup-database.sh
+      minute: "0"
+      hour: "2"
+      user: root
+
+  # Example 2: Hourly log cleanup
+  - task: Hourly log cleanup
+    module: cron
+    vars:
+      name: log-cleanup
+      job: /usr/local/bin/cleanup-logs.sh
+      special_time: hourly
+      user: root
+
+  # Example 3: Weekly system update (using special_time)
+  - task: Weekly system update
+    module: cron
+    vars:
+      name: weekly-update
+      job: apt-get update && apt-get upgrade -y
+      special_time: weekly
+      user: root
+
+  # Example 4: Every 5 minutes monitoring check
+  - task: Monitoring check
+    module: cron
+    vars:
+      name: monitoring-check
+      job: /usr/local/bin/check-services.sh
+      minute: "*/5"
+      user: monitoring
+
+  # Example 5: Remove a cron job
+  - task: Remove old backup job
+    module: cron
+    vars:
+      name: old-backup-job
+      state: absent
+      user: root
+
+  # Example 6: Disabled job (present but commented out)
+  - task: Temporarily disabled job
+    module: cron
+    vars:
+      name: disabled-maintenance
+      job: /usr/local/bin/maintenance.sh
+      minute: "0"
+      hour: "3"
+      disabled: true
+      user: root
+
+  # Example 7: Reboot task
+  - task: Monthly reboot
+    module: cron
+    vars:
+      name: monthly-reboot
+      job: /sbin/reboot
+      special_time: reboot
+      user: root
+
+  # Example 8: Complex schedule - First day of month at midnight
+  - task: Monthly report
+    module: cron
+    vars:
+      name: monthly-report
+      job: /usr/local/bin/generate-report.sh
+      minute: "0"
+      hour: "0"
+      day: "1"
+      user: reports

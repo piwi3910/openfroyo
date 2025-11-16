@@ -1,0 +1,9 @@
+name: hostname
+version: 1.0.0
+description: Set system hostname
+
+steps:
+  - name: Set hostname
+    wasm: wasm/hostname.wasm
+    vars:
+      name: "{{ var.name }}"

@@ -1,0 +1,5 @@
+opts: "defaults"
+state: "mounted"
+fstab: true
+dump: 0
+passno: 0

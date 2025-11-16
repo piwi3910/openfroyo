@@ -1,0 +1,76 @@
+# Authorized Keys Module Test
+#
+# This module manages SSH authorized_keys files.
+# Supports: Linux (SSH key management)
+#
+# Usage:
+#   froyo apply modules/generic/authorized_keys/test.ofy
+#
+# Variables:
+#   - user (required): Username
+#   - key (required): SSH public key
+#   - state (required): Desired state (present, absent)
+#   - key_options (optional): SSH key options (e.g., "no-port-forwarding,no-X11-forwarding")
+#   - exclusive (optional): Remove all other keys (default: false)
+#   - path (optional): Custom authorized_keys path (default: ~/.ssh/authorized_keys)
+#
+# Examples in this test:
+#   1. Add an SSH key
+#   2. Add an SSH key with options
+#   3. Replace all keys (exclusive mode)
+#   4. Remove an SSH key
+
+name: Authorized Keys Module Test
+description: Test and demonstrate the authorized_keys module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Add SSH key for user
+    module: generic/authorized_keys
+    hosts:
+      - test-host
+    vars:
+      user: testuser
+      key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... user@example.com"
+      state: present
+
+  - name: Add SSH key with options
+    module: generic/authorized_keys
+    hosts:
+      - test-host
+    vars:
+      user: testuser
+      key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD... deploy@example.com"
+      state: present
+      key_options: "no-port-forwarding,no-X11-forwarding,command=\"/usr/bin/deploy.sh\""
+
+  - name: Add key to custom path
+    module: generic/authorized_keys
+    hosts:
+      - test-host
+    vars:
+      user: appuser
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFq... app@example.com"
+      state: present
+      path: /opt/app/.ssh/authorized_keys
+
+  - name: Replace all keys (exclusive)
+    module: generic/authorized_keys
+    hosts:
+      - test-host
+    vars:
+      user: svcuser
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAbc... service@example.com"
+      state: present
+      exclusive: true
+
+  - name: Remove SSH key
+    module: generic/authorized_keys
+    hosts:
+      - test-host
+    vars:
+      user: testuser
+      key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... oldkey@example.com"
+      state: absent

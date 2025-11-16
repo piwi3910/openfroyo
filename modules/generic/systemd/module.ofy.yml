@@ -1,0 +1,13 @@
+name: systemd
+version: 1.0.0
+description: Manage systemd services
+
+steps:
+  - name: Manage systemd service
+    wasm: wasm/systemd.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('') }}"
+      enabled: "{{ var.enabled | default('') }}"
+      daemon_reload: "{{ var.daemon_reload | default(false) }}"
+      masked: "{{ var.masked | default('') }}"

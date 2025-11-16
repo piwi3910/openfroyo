@@ -1,0 +1,105 @@
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  # Test ping module - Safe to run
+  - name: Test network connectivity
+    module: generic/ping
+    hosts:
+      - test-host
+    vars:
+      host: 8.8.8.8
+      count: 3
+
+  # Test hostname module - Read current hostname
+  - name: Get current hostname
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: hostname
+
+  # Test timezone module - Read current timezone
+  - name: Get current timezone
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || echo "UTC"
+
+  # Test sysctl module - Read a kernel parameter
+  - name: Read kernel parameter
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: sysctl -n net.ipv4.ip_forward 2>/dev/null || echo "not available"
+
+  # Test user module - Create test user
+  - name: Create test user
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test
+      state: present
+      shell: /bin/bash
+      create_home: true
+
+  # Test group module - Create test group
+  - name: Create test group
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test-group
+      state: present
+
+  # Test systemd module - Check systemd service status
+  - name: Check SSH service status
+    module: generic/systemd
+    hosts:
+      - test-host
+    vars:
+      name: ssh
+
+  # Test cron module - Add test cron job
+  - name: Add test cron job
+    module: generic/cron
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test-job
+      job: echo "OpenFroyo test" > /dev/null
+      minute: "0"
+      hour: "2"
+      state: present
+      user: openfroyo
+
+  # Clean up test cron job
+  - name: Remove test cron job
+    module: generic/cron
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test-job
+      state: absent
+      user: openfroyo
+
+  # Clean up test user
+  - name: Remove test user
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test
+      state: absent
+
+  # Clean up test group
+  - name: Remove test group
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: openfroyo-test-group
+      state: absent

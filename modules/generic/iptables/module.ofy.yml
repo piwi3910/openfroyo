@@ -1,0 +1,16 @@
+name: iptables
+version: 1.0.0
+description: Manage iptables firewall rules
+
+steps:
+  - name: Manage iptables
+    wasm: wasm/iptables.wasm
+    vars:
+      chain: "{{ var.chain | default('INPUT') }}"
+      protocol: "{{ var.protocol }}"
+      destination_port: "{{ var.destination_port }}"
+      source: "{{ var.source }}"
+      destination: "{{ var.destination }}"
+      jump: "{{ var.jump | default('ACCEPT') }}"
+      state: "{{ var.state | default('present') }}"
+      table: "{{ var.table | default('filter') }}"

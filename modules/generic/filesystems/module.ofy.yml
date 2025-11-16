@@ -1,0 +1,16 @@
+name: filesystems
+version: 1.0.0
+description: Manage filesystem mounts on remote hosts
+
+steps:
+  - name: Manage filesystem
+    wasm: wasm/filesystems.wasm
+    vars:
+      device: "{{ var.device }}"
+      path: "{{ var.path }}"
+      fstype: "{{ var.fstype }}"
+      opts: "{{ var.opts | default('defaults') }}"
+      state: "{{ var.state | default('mounted') }}"
+      fstab: "{{ var.fstab | default(true) }}"
+      dump: "{{ var.dump | default(0) }}"
+      passno: "{{ var.passno | default(0) }}"

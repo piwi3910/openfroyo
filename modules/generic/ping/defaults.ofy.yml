@@ -1,0 +1,4 @@
+host: 8.8.8.8
+count: 4
+timeout: 5
+interface: ""

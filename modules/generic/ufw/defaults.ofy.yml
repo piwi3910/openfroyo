@@ -1,0 +1,9 @@
+rule: allow
+port: ""
+proto: ""
+from_ip: ""
+to_ip: ""
+direction: ""
+interface: ""
+state: enabled
+delete: false

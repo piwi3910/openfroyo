@@ -1,0 +1,93 @@
+name: Test LVM Module
+version: 1.0.0
+
+# Test LVM management (Physical Volumes, Volume Groups, Logical Volumes)
+
+inventory:
+  - hosts:
+      - localhost
+
+defaults:
+  ssh_user: root
+
+run:
+  # Test 1: Create physical volumes
+  - name: Create physical volumes
+    module: generic/lvm
+    vars:
+      pvs:
+        - "/dev/sdb"
+        - "/dev/sdc"
+      state: "present"
+
+  # Test 2: Create volume group from physical volumes
+  - name: Create volume group
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      pvs:
+        - "/dev/sdb"
+        - "/dev/sdc"
+      state: "present"
+
+  # Test 3: Create logical volume with fixed size
+  - name: Create 10GB logical volume
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      lv: "lv_mysql"
+      size: "10G"
+      state: "present"
+
+  # Test 4: Create logical volume using percentage
+  - name: Create LV using 50% of VG
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      lv: "lv_postgres"
+      size: "50%VG"
+      state: "present"
+
+  # Test 5: Create logical volume using all free space
+  - name: Create LV using all free space
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      lv: "lv_backup"
+      size: "100%FREE"
+      state: "present"
+
+  # Test 6: Extend existing logical volume
+  - name: Extend logical volume to 20GB
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      lv: "lv_mysql"
+      size: "20G"
+      state: "present"
+
+  # Test 7: Remove logical volume
+  - name: Remove logical volume
+    module: generic/lvm
+    vars:
+      vg: "vg_data"
+      lv: "lv_old"
+      state: "absent"
+      force: true
+
+  # Test 8: Remove volume group
+  - name: Remove volume group
+    module: generic/lvm
+    vars:
+      vg: "vg_old"
+      pvs: []
+      state: "absent"
+      force: true
+
+  # Test 9: Remove physical volumes
+  - name: Remove physical volumes
+    module: generic/lvm
+    vars:
+      pvs:
+        - "/dev/sdd"
+      state: "absent"

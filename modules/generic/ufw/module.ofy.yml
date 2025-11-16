@@ -1,0 +1,17 @@
+name: ufw
+version: 1.0.0
+description: Manage UFW (Uncomplicated Firewall) rules
+
+steps:
+  - name: Manage UFW
+    wasm: wasm/ufw.wasm
+    vars:
+      rule: "{{ var.rule | default('allow') }}"
+      port: "{{ var.port }}"
+      proto: "{{ var.proto }}"
+      from_ip: "{{ var.from_ip }}"
+      to_ip: "{{ var.to_ip }}"
+      direction: "{{ var.direction }}"
+      interface: "{{ var.interface }}"
+      state: "{{ var.state | default('enabled') }}"
+      delete: "{{ var.delete | default(false) }}"

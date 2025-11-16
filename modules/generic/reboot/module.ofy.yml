@@ -1,0 +1,12 @@
+name: reboot
+version: 1.0.0
+description: Reboot, shutdown, or halt the system
+
+steps:
+  - name: System power action
+    wasm: wasm/reboot.wasm
+    vars:
+      state: "{{ var.state | default('reboot') }}"
+      delay: "{{ var.delay | default('0') }}"
+      message: "{{ var.message | default('') }}"
+      force: "{{ var.force | default('false') }}"

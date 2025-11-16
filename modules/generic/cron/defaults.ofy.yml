@@ -1,0 +1,11 @@
+name: ""
+job: ""
+state: present
+user: root
+minute: "*"
+hour: "*"
+day: "*"
+month: "*"
+weekday: "*"
+special_time: ""
+disabled: false

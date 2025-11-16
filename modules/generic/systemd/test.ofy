@@ -1,0 +1,55 @@
+inventory:
+  source: inline
+  hosts:
+    localhost:
+      host: localhost
+      user: "{{ env.USER }}"
+
+defaults:
+  max_parallel: 1
+
+run:
+  # Example 1: Start and enable nginx service
+  - task: Start and enable nginx
+    module: systemd
+    vars:
+      name: nginx
+      state: started
+      enabled: true
+
+  # Example 2: Restart a service
+  - task: Restart apache2
+    module: systemd
+    vars:
+      name: apache2
+      state: restarted
+
+  # Example 3: Stop and disable a service
+  - task: Stop and disable mysql
+    module: systemd
+    vars:
+      name: mysql
+      state: stopped
+      enabled: false
+
+  # Example 4: Reload systemd daemon and restart service
+  - task: Reload daemon and restart docker
+    module: systemd
+    vars:
+      name: docker
+      daemon_reload: true
+      state: restarted
+
+  # Example 5: Mask a service
+  - task: Mask service
+    module: systemd
+    vars:
+      name: unwanted-service
+      masked: true
+
+  # Example 6: Just enable a service without changing state
+  - task: Enable service at boot
+    module: systemd
+    vars:
+      name: ssh
+      enabled: true

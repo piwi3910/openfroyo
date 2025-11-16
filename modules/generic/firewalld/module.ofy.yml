@@ -1,0 +1,14 @@
+name: firewalld
+version: 1.0.0
+description: Manage firewalld firewall services and ports
+
+steps:
+  - name: Manage firewalld
+    wasm: wasm/firewalld.wasm
+    vars:
+      service: "{{ var.service }}"
+      port: "{{ var.port }}"
+      state: "{{ var.state | default('enabled') }}"
+      zone: "{{ var.zone | default('public') }}"
+      permanent: "{{ var.permanent | default(true) }}"
+      immediate: "{{ var.immediate | default(true) }}"

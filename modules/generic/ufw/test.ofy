@@ -1,0 +1,56 @@
+name: Test UFW module
+inventory:
+  hosts:
+    - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  # Test enabling UFW
+  - name: Enable UFW
+    module: generic/ufw
+    hosts:
+      - localhost
+    vars:
+      state: enabled
+
+  # Test allowing SSH
+  - name: Allow SSH
+    module: generic/ufw
+    hosts:
+      - localhost
+    vars:
+      rule: allow
+      port: 22
+      proto: tcp
+
+  # Test allowing HTTP
+  - name: Allow HTTP
+    module: generic/ufw
+    hosts:
+      - localhost
+    vars:
+      rule: allow
+      port: 80
+      proto: tcp
+
+  # Test allowing from specific IP
+  - name: Allow from admin network
+    module: generic/ufw
+    hosts:
+      - localhost
+    vars:
+      rule: allow
+      from_ip: 192.168.1.0/24
+
+  # Test deleting a rule
+  - name: Delete HTTP rule
+    module: generic/ufw
+    hosts:
+      - localhost
+    vars:
+      rule: allow
+      port: 80
+      proto: tcp
+      delete: true

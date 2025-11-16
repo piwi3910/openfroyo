@@ -1,0 +1,14 @@
+name: authorized_keys
+version: 1.0.0
+description: Manage SSH authorized_keys files
+
+steps:
+  - name: Manage SSH authorized keys
+    wasm: wasm/authorized_keys.wasm
+    vars:
+      user: "{{ var.user }}"
+      key: "{{ var.key }}"
+      state: "{{ var.state | default('present') }}"
+      key_options: "{{ var.key_options | default('') }}"
+      exclusive: "{{ var.exclusive | default(false) }}"
+      path: "{{ var.path | default('') }}"

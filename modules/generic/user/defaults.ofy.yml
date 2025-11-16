@@ -1,0 +1,11 @@
+name: ""
+state: present
+uid: ""
+group: ""
+groups: []
+shell: /bin/bash
+home: ""
+create_home: true
+password: ""
+comment: ""
+system: false

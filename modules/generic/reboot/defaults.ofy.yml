@@ -1,0 +1,4 @@
+state: reboot
+delay: 0
+message: "System is going down for maintenance"
+force: false

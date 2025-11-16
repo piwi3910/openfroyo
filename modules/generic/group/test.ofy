@@ -1,0 +1,60 @@
+# Group Module Test
+#
+# This module manages system groups.
+# Supports: Linux (groupadd, groupmod, groupdel)
+#
+# Usage:
+#   froyo apply modules/generic/group/test.ofy
+#
+# Variables:
+#   - name (required): Group name
+#   - state (required): Desired state (present, absent)
+#   - gid (optional): Group ID
+#   - system (optional): Create system group (default: false)
+#
+# Examples in this test:
+#   1. Create a basic group
+#   2. Create a group with custom GID
+#   3. Create a system group
+#   4. Remove a group
+
+name: Group Module Test
+description: Test and demonstrate the group module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create basic group
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: developers
+      state: present
+
+  - name: Create group with custom GID
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: appgroup
+      state: present
+      gid: "1500"
+
+  - name: Create system group
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: svcgroup
+      state: present
+      system: true
+
+  - name: Remove group
+    module: generic/group
+    hosts:
+      - test-host
+    vars:
+      name: oldgroup
+      state: absent

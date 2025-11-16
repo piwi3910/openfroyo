@@ -1,0 +1,8 @@
+chain: INPUT
+protocol: ""
+destination_port: ""
+source: ""
+destination: ""
+jump: ACCEPT
+state: present
+table: filter

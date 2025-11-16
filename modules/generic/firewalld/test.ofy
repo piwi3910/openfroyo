@@ -1,0 +1,38 @@
+name: Test firewalld module
+inventory:
+  hosts:
+    - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  # Test enabling HTTP service
+  - name: Enable HTTP service
+    module: generic/firewalld
+    hosts:
+      - localhost
+    vars:
+      service: http
+      state: enabled
+      zone: public
+
+  # Test enabling custom port
+  - name: Enable custom port 8080
+    module: generic/firewalld
+    hosts:
+      - localhost
+    vars:
+      port: 8080/tcp
+      state: enabled
+      zone: public
+
+  # Test disabling service
+  - name: Disable HTTP service
+    module: generic/firewalld
+    hosts:
+      - localhost
+    vars:
+      service: http
+      state: disabled
+      zone: public

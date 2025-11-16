@@ -1,0 +1,11 @@
+name: selinux
+version: 1.0.0
+description: Configure SELinux state and policy
+
+steps:
+  - name: Configure SELinux
+    wasm: wasm/selinux.wasm
+    vars:
+      state: "{{ var.state }}"
+      policy: "{{ var.policy | default('targeted') }}"
+      configfile: "{{ var.configfile | default('/etc/selinux/config') }}"

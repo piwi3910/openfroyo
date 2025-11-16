@@ -1,0 +1,78 @@
+# User Module Test
+#
+# This module manages system users.
+# Supports: Linux (useradd, usermod, userdel)
+#
+# Usage:
+#   froyo apply modules/generic/user/test.ofy
+#
+# Variables:
+#   - name (required): Username
+#   - state (required): Desired state (present, absent)
+#   - uid (optional): User ID
+#   - group (optional): Primary group
+#   - groups (optional): Supplementary groups (array)
+#   - shell (optional): Login shell (default: /bin/bash)
+#   - home (optional): Home directory path
+#   - create_home (optional): Create home directory (default: true)
+#   - password (optional): Encrypted password
+#   - comment (optional): User comment/GECOS field
+#   - system (optional): Create system user (default: false)
+#
+# Examples in this test:
+#   1. Create a basic user
+#   2. Create a user with custom settings
+#   3. Create a system user
+#   4. Remove a user
+
+name: User Module Test
+description: Test and demonstrate the user module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create basic user
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: testuser
+      state: present
+
+  - name: Create user with custom settings
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: appuser
+      state: present
+      uid: "1500"
+      group: users
+      groups:
+        - docker
+        - sudo
+      shell: /bin/bash
+      home: /home/appuser
+      create_home: true
+      comment: "Application User"
+
+  - name: Create system user
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: svcuser
+      state: present
+      system: true
+      create_home: false
+      shell: /usr/sbin/nologin
+      comment: "Service Account"
+
+  - name: Remove user
+    module: generic/user
+    hosts:
+      - test-host
+    vars:
+      name: olduser
+      state: absent

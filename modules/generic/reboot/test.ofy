@@ -1,0 +1,49 @@
+---
+# Test stack for reboot module
+# WARNING: These tests will actually reboot/shutdown the system if executed!
+# Use with extreme caution and only in test environments.
+
+inventory:
+  hosts:
+    - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  # Test 1: Schedule a reboot (can be cancelled)
+  - task: Schedule reboot in 10 minutes
+    module: reboot
+    vars:
+      state: reboot
+      delay: 10
+      message: "Test reboot - will be cancelled"
+
+  # Test 2: Cancel the scheduled reboot
+  - task: Cancel scheduled reboot
+    module: reboot
+    vars:
+      state: cancel
+
+  # DANGEROUS: Uncomment only in isolated test VMs
+  # Test 3: Immediate reboot (WILL REBOOT THE SYSTEM)
+  # - task: Reboot now
+  #   module: reboot
+  #   vars:
+  #     state: reboot
+  #     delay: 0
+
+  # Test 4: Force reboot (WILL FORCEFULLY REBOOT)
+  # - task: Force reboot
+  #   module: reboot
+  #   vars:
+  #     state: reboot
+  #     force: true
+
+  # Test 5: Schedule shutdown
+  # - task: Schedule shutdown
+  #   module: reboot
+  #   vars:
+  #     state: shutdown
+  #     delay: 15
+  #     message: "Test shutdown"

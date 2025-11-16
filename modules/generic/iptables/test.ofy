@@ -1,0 +1,45 @@
+name: Test iptables module
+inventory:
+  hosts:
+    - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  # Test allowing HTTP
+  - name: Allow HTTP traffic
+    module: generic/iptables
+    hosts:
+      - localhost
+    vars:
+      chain: INPUT
+      protocol: tcp
+      destination_port: 80
+      jump: ACCEPT
+      state: present
+
+  # Test allowing SSH from specific network
+  - name: Allow SSH from local network
+    module: generic/iptables
+    hosts:
+      - localhost
+    vars:
+      chain: INPUT
+      protocol: tcp
+      destination_port: 22
+      source: 192.168.1.0/24
+      jump: ACCEPT
+      state: present
+
+  # Test removing a rule
+  - name: Remove HTTP rule
+    module: generic/iptables
+    hosts:
+      - localhost
+    vars:
+      chain: INPUT
+      protocol: tcp
+      destination_port: 80
+      jump: ACCEPT
+      state: absent

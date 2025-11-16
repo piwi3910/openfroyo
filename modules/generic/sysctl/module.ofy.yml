@@ -1,0 +1,13 @@
+name: sysctl
+version: 1.0.0
+description: Manage kernel parameters
+
+steps:
+  - name: Manage sysctl parameter
+    wasm: wasm/sysctl.wasm
+    vars:
+      name: "{{ var.name }}"
+      value: "{{ var.value }}"
+      state: "{{ var.state | default('present') }}"
+      reload: "{{ var.reload | default(true) }}"
+      sysctl_file: "{{ var.sysctl_file | default('/etc/sysctl.conf') }}"
