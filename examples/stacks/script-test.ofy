@@ -1,0 +1,21 @@
+name: Script Module Test
+description: Test script module functionality
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Run hello script without args
+    module: generic/script
+    hosts:
+      - test-host
+    vars:
+      script: examples/scripts/hello.sh
+
+  - name: Run hello script with arguments
+    module: generic/script
+    hosts:
+      - test-host
+    vars:
+      script: examples/scripts/hello.sh
+      args: arg1 arg2 "argument 3"

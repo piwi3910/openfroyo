@@ -7,7 +7,7 @@ defaults:
 
 run:
   - name: Check kernel version
-    module: generic/exec
+    module: generic/command
     hosts:
       - test-host
     vars:

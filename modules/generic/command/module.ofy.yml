@@ -1,9 +1,9 @@
-name: exec
+name: command
 version: 1.0.0
 description: Execute shell commands on remote hosts
 
 steps:
   - name: Execute command
-    wasm: wasm/exec.wasm
+    wasm: wasm/command.wasm
     vars:
       cmd: "{{ var.cmd }}"

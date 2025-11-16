@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -150,6 +151,16 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 	if pkgCmdInterface, exists := output.Facts["package_command"]; exists {
 		if pkgCmd, ok := pkgCmdInterface.(string); ok && pkgCmd != "" {
 			output = executePackageCommand(output, pkgCmd)
+		}
+	}
+
+	// Check if the module wants us to execute a script
+	if scriptCmdInterface, exists := output.Facts["script_command"]; exists {
+		if scriptCmd, ok := scriptCmdInterface.(string); ok && scriptCmd != "" {
+			// Get script details from facts
+			scriptPath, _ := output.Facts["script_path"].(string)
+			scriptContent, _ := output.Facts["script_content"].(string)
+			output = executeScript(output, scriptPath, scriptContent, scriptCmd)
 		}
 	}
 
@@ -389,6 +400,53 @@ func getUpgradeCommand(pkgMgr, packageName string) string {
 func printOutput(output TaskOutput) {
 	outputJSON, _ := json.MarshalIndent(output, "", "  ")
 	fmt.Println(string(outputJSON))
+}
+
+func executeScript(output TaskOutput, scriptPath, scriptContent, scriptCmd string) TaskOutput {
+	// Create script directory
+	scriptDir := filepath.Dir(scriptPath)
+	if err := os.MkdirAll(scriptDir, 0755); err != nil {
+		output.Status = "failed"
+		output.Message = fmt.Sprintf("Failed to create script directory: %v", err)
+		output.Facts["error"] = err.Error()
+		return output
+	}
+
+	// Write script content to file
+	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+		output.Status = "failed"
+		output.Message = fmt.Sprintf("Failed to write script file: %v", err)
+		output.Facts["error"] = err.Error()
+		return output
+	}
+
+	// Execute the script
+	parts := strings.Fields(scriptCmd)
+	var cmd *exec.Cmd
+	if len(parts) > 1 {
+		cmd = exec.Command(parts[0], parts[1:]...)
+	} else {
+		cmd = exec.Command(parts[0])
+	}
+
+	cmdOutput, cmdErr := cmd.CombinedOutput()
+
+	if cmdErr != nil {
+		output.Status = "failed"
+		output.Message = fmt.Sprintf("Script execution failed: %v", cmdErr)
+		output.Facts["stdout"] = string(cmdOutput)
+		output.Facts["error"] = cmdErr.Error()
+	} else {
+		output.Status = "ok"
+		output.Message = fmt.Sprintf("Script executed successfully: %s", scriptPath)
+		output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
+	}
+
+	// Clean up script facts that were just for execution
+	delete(output.Facts, "script_command")
+	delete(output.Facts, "script_content")
+
+	return output
 }
 
 // hostExec is called by WASM modules to execute shell commands

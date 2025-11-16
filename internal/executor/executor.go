@@ -1,7 +1,9 @@
 package executor
 
 import (
+	"encoding/base64"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -95,6 +97,13 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 		vars[k] = v
 	}
 
+	// Special handling for script module: read local script file
+	if moduleName == "script" {
+		if err := e.handleScriptModule(vars); err != nil {
+			return fmt.Errorf("failed to prepare script: %w", err)
+		}
+	}
+
 	// Execute module
 	output, err := client.ExecuteModule(modulePath, entry.Name, vars)
 	if err != nil {
@@ -121,6 +130,28 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 	if output.Status == "failed" {
 		return fmt.Errorf("task failed: %s", output.Message)
 	}
+
+	return nil
+}
+
+// handleScriptModule prepares script module execution by reading local script file
+func (e *Executor) handleScriptModule(vars map[string]interface{}) error {
+	scriptPath, ok := vars["script"].(string)
+	if !ok || scriptPath == "" {
+		return fmt.Errorf("script variable is required")
+	}
+
+	// Read local script file
+	scriptContent, err := os.ReadFile(scriptPath)
+	if err != nil {
+		return fmt.Errorf("failed to read script file %s: %w", scriptPath, err)
+	}
+
+	// Base64 encode the script content
+	encoded := base64.StdEncoding.EncodeToString(scriptContent)
+
+	// Add the encoded content as a hidden variable
+	vars["_script_content"] = encoded
 
 	return nil
 }

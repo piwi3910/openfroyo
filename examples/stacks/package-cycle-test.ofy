@@ -23,7 +23,7 @@ run:
       update_cache: true
 
   - name: Verify htop is installed
-    module: generic/exec
+    module: generic/command
     hosts:
       - test-host
     vars:
