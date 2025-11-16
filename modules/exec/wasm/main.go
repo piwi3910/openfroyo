@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -55,39 +54,19 @@ func main() {
 		return
 	}
 
-	// Parse command (simple shell-style parsing)
-	parts := strings.Fields(cmdStr)
-	if len(parts) == 0 {
+	// Validate command is not empty
+	if strings.TrimSpace(cmdStr) == "" {
 		outputError("Command cannot be empty")
 		return
 	}
 
-	// Execute command
-	command := exec.Command(parts[0], parts[1:]...)
-
-	output, err := command.CombinedOutput()
-	outputStr := string(output)
-
-	if err != nil {
-		// Command failed
-		result := TaskOutput{
-			Status:  "failed",
-			Message: fmt.Sprintf("Command failed: %v\nOutput: %s", err, outputStr),
-			Facts: map[string]interface{}{
-				"stdout": outputStr,
-				"error":  err.Error(),
-			},
-		}
-		printOutput(result)
-		return
-	}
-
-	// Command succeeded
+	// For MVP: Return the command to be executed by the host
+	// (WASM can't execute processes, so we tell the host what to run)
 	result := TaskOutput{
 		Status:  "ok",
-		Message: fmt.Sprintf("Command executed successfully: %s", cmdStr),
+		Message: fmt.Sprintf("Command prepared: %s", cmdStr),
 		Facts: map[string]interface{}{
-			"stdout": strings.TrimSpace(outputStr),
+			"exec_command": cmdStr,  // Tell the host to execute this
 		},
 	}
 	printOutput(result)

@@ -3,7 +3,7 @@ inventory:
   - examples/inventory/hosts.ofy.yml
 
 defaults:
-  cmd: uname -r
+  cmd: /usr/bin/uname -r
 
 run:
   - name: Check kernel version
@@ -11,4 +11,4 @@ run:
     hosts:
       - test-host
     vars:
-      cmd: uname -r
+      cmd: /usr/bin/uname -r

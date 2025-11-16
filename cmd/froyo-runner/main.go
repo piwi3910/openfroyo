@@ -108,13 +108,15 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 	// Capture stdout
 	var stdout, stderr strings.Builder
 
-	// Configure module with I/O
+	// Configure module with I/O, filesystem access, and environment
 	config := wazero.NewModuleConfig().
 		WithStdin(stdin).
 		WithStdout(&stdout).
 		WithStderr(&stderr).
 		WithSysNanosleep().
-		WithSysWalltime()
+		WithSysWalltime().
+		WithFS(os.DirFS("/")).  // Grant access to root filesystem for command execution
+		WithEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
 
 	// Instantiate the module
 	mod, err := r.InstantiateWithConfig(ctx, wasmBytes, config)
@@ -134,6 +136,30 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 			Status:  "failed",
 			Message: fmt.Sprintf("Failed to parse module output: %v\nStdout: %s\nStderr: %s", err, stdout.String(), stderr.String()),
 			Facts:   make(map[string]interface{}),
+		}
+	}
+
+	// Check if the module wants us to execute a command
+	if execCmdInterface, exists := output.Facts["exec_command"]; exists {
+		if execCmd, ok := execCmdInterface.(string); ok && execCmd != "" {
+			// Execute the command on the host
+			parts := strings.Fields(execCmd)
+			if len(parts) > 0 {
+				cmd := exec.Command(parts[0], parts[1:]...)
+				cmdOutput, cmdErr := cmd.CombinedOutput()
+
+				if cmdErr != nil {
+					output.Status = "failed"
+					output.Message = fmt.Sprintf("Command failed: %v", cmdErr)
+					output.Facts["stdout"] = string(cmdOutput)
+					output.Facts["error"] = cmdErr.Error()
+				} else {
+					output.Status = "ok"
+					output.Message = fmt.Sprintf("Command executed successfully: %s", execCmd)
+					output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
+				}
+				delete(output.Facts, "exec_command") // Remove the internal directive
+			}
 		}
 	}
 

@@ -1,9 +1,8 @@
 hosts:
   test-host:
-    ssh_host: 192.168.1.100  # Replace with your Linux host IP
+    ssh_host: 192.168.10.217
     ssh_port: 22
-    ssh_user: root  # Replace with your SSH user
-    ssh_key_file: ~/.ssh/id_rsa  # Or use ssh_password instead
-    # ssh_password: your-password  # Uncomment to use password auth
+    ssh_user: piwi
+    ssh_password: Jbz49teq01!
     vars:
       environment: test

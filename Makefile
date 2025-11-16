@@ -22,10 +22,10 @@ build-cli:
 	@echo "✓ Built: bin/froyo"
 
 build-runner:
-	@echo "Building froyo-runner (static binary)..."
+	@echo "Building froyo-runner (static Linux binary)..."
 	@mkdir -p bin
-	@CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/froyo-runner ./cmd/froyo-runner
-	@echo "✓ Built: bin/froyo-runner"
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/froyo-runner ./cmd/froyo-runner
+	@echo "✓ Built: bin/froyo-runner (Linux amd64)"
 
 build-wasm:
 	@echo "Building WASM modules..."

@@ -97,16 +97,17 @@ func (c *Client) EnsureRunner(localRunnerPath string) error {
 		return fmt.Errorf("failed to create runner directory: %w", err)
 	}
 
-	// Check if runner exists
-	checkCmd := fmt.Sprintf("test -f %s && echo exists || echo missing", remoteRunnerPath)
-	output, err := c.runCommandOutput(checkCmd)
-	if err != nil {
-		return fmt.Errorf("failed to check for runner: %w", err)
-	}
-
-	if strings.TrimSpace(output) == "exists" {
-		return nil // Runner already exists
-	}
+	// For development: always upload the latest runner
+	// TODO: Add version checking or hash comparison for production
+	// checkCmd := fmt.Sprintf("test -f %s && echo exists || echo missing", remoteRunnerPath)
+	// output, err := c.runCommandOutput(checkCmd)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to check for runner: %w", err)
+	// }
+	//
+	// if strings.TrimSpace(output) == "exists" {
+	// 	return nil // Runner already exists
+	// }
 
 	// Upload runner
 	if err := c.uploadFile(localRunnerPath, remoteRunnerPath); err != nil {
@@ -153,7 +154,7 @@ func (c *Client) ExecuteModule(modulePath, taskName string, vars map[string]inte
 
 	output, err := c.runCommandOutput(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute module: %w", err)
+		return nil, fmt.Errorf("failed to execute module: %w\nOutput: %s", err, output)
 	}
 
 	// Parse output
