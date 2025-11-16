@@ -1,0 +1,20 @@
+name: Test Stack with OpenFroyo User
+description: Test connection using the openfroyo user
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Check kernel version
+    module: generic/exec
+    hosts:
+      - test-host
+    vars:
+      cmd: /usr/bin/uname -r
+
+  - name: Test sudo access
+    module: generic/exec
+    hosts:
+      - test-host
+    vars:
+      cmd: sudo whoami

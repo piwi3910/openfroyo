@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -42,6 +42,8 @@ type TaskOutput struct {
 
 // NewClient creates a new SSH client
 func NewClient(host parser.Host) (*Client, error) {
+	fmt.Printf("DEBUG NewClient: Creating SSH config for %s@%s:%d\n", host.SSHUser, host.SSHHost, host.SSHPort)
+
 	config := &ssh.ClientConfig{
 		User:            host.SSHUser,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // For MVP - should validate in production
@@ -49,6 +51,7 @@ func NewClient(host parser.Host) (*Client, error) {
 
 	// Add authentication method
 	if host.SSHKeyFile != "" {
+		fmt.Println("DEBUG NewClient: Using SSH key file authentication")
 		key, err := os.ReadFile(host.SSHKeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read SSH key: %w", err)
@@ -61,6 +64,8 @@ func NewClient(host parser.Host) (*Client, error) {
 
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	} else if host.SSHPassword != "" {
+		fmt.Println("DEBUG NewClient: Using password authentication")
+		fmt.Printf("DEBUG NewClient: Password bytes: %v\n", []byte(host.SSHPassword))
 		config.Auth = append(config.Auth, ssh.Password(host.SSHPassword))
 	} else {
 		return nil, fmt.Errorf("no authentication method specified (password or key file required)")
@@ -68,11 +73,14 @@ func NewClient(host parser.Host) (*Client, error) {
 
 	// Connect
 	addr := fmt.Sprintf("%s:%d", host.SSHHost, host.SSHPort)
+	fmt.Printf("DEBUG NewClient: Attempting to dial %s\n", addr)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
+		fmt.Printf("DEBUG NewClient: Dial failed: %v\n", err)
 		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
 	}
 
+	fmt.Println("DEBUG NewClient: Connection successful!")
 	return &Client{
 		host:      host,
 		client:    client,
@@ -82,13 +90,22 @@ func NewClient(host parser.Host) (*Client, error) {
 
 // NewSimpleClient creates a basic SSH client with host, port, user, and password
 func NewSimpleClient(host string, port int, user, password string) (*ssh.Client, error) {
+	fmt.Printf("DEBUG NewSimpleClient: Creating SSH config for %s@%s:%d\n", user, host, port)
+	fmt.Printf("DEBUG NewSimpleClient: Password bytes: %v\n", []byte(password))
+
 	config := &ssh.ClientConfig{
 		User:            user,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
+	// Password auth
+	fmt.Println("DEBUG NewSimpleClient: Adding Password auth method")
 	config.Auth = append(config.Auth, ssh.Password(password))
+
+	// Keyboard-interactive auth
+	fmt.Println("DEBUG NewSimpleClient: Adding KeyboardInteractive auth method")
 	config.Auth = append(config.Auth, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+		fmt.Printf("DEBUG KeyboardInteractive: user=%s instruction=%s questions=%v\n", user, instruction, questions)
 		answers := make([]string, len(questions))
 		for i := range answers {
 			answers[i] = password
@@ -97,11 +114,14 @@ func NewSimpleClient(host string, port int, user, password string) (*ssh.Client,
 	}))
 
 	addr := fmt.Sprintf("%s:%d", host, port)
+	fmt.Printf("DEBUG NewSimpleClient: Attempting to dial %s\n", addr)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
+		fmt.Printf("DEBUG NewSimpleClient: Dial failed: %v\n", err)
 		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
 	}
 
+	fmt.Println("DEBUG NewSimpleClient: Connection successful!")
 	return client, nil
 }
 
@@ -279,43 +299,54 @@ func (c *Client) runCommandOutput(cmd string) (string, error) {
 	return string(output), err
 }
 
-// uploadFile uploads a local file to the remote host using SCP
+// uploadFile uploads a local file to the remote host using native scp command
 func (c *Client) uploadFile(localPath, remotePath string) error {
-	// Read local file
-	data, err := os.ReadFile(localPath)
-	if err != nil {
-		return fmt.Errorf("failed to read local file: %w", err)
-	}
+	fmt.Printf("DEBUG uploadFile: Uploading %s to %s\n", localPath, remotePath)
 
 	// Create remote directory if needed
 	remoteDir := filepath.Dir(remotePath)
+	fmt.Printf("DEBUG uploadFile: Creating remote directory %s\n", remoteDir)
 	if err := c.runCommand(fmt.Sprintf("mkdir -p %s", remoteDir)); err != nil {
 		return fmt.Errorf("failed to create remote directory: %w", err)
 	}
 
-	// Open SCP session
-	session, err := c.client.NewSession()
+	// Build scp command using the existing SSH connection details
+	var scpCmd []string
+	addr := fmt.Sprintf("%s@%s", c.host.SSHUser, c.host.SSHHost)
+
+	// Add port if not default
+	if c.host.SSHPort != 22 {
+		scpCmd = append(scpCmd, "scp", "-P", fmt.Sprintf("%d", c.host.SSHPort))
+	} else {
+		scpCmd = append(scpCmd, "scp")
+	}
+
+	// Add SSH options
+	scpCmd = append(scpCmd, "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null")
+
+	// Add key file if specified
+	if c.host.SSHKeyFile != "" {
+		scpCmd = append(scpCmd, "-i", c.host.SSHKeyFile)
+	}
+
+	// Add source and destination
+	scpCmd = append(scpCmd, localPath, fmt.Sprintf("%s:%s", addr, remotePath))
+
+	fmt.Printf("DEBUG uploadFile: Running: %v\n", scpCmd)
+
+	// Execute scp command
+	cmd := exec.Command(scpCmd[0], scpCmd[1:]...)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
-	defer session.Close()
-
-	// Create pipe for stdin
-	stdin, err := session.StdinPipe()
-	if err != nil {
-		return err
+		fmt.Printf("DEBUG uploadFile: SCP failed: %v, output: %s\n", err, string(output))
+		return fmt.Errorf("scp failed: %w, output: %s", err, string(output))
 	}
 
-	// Start SCP command
-	if err := session.Start(fmt.Sprintf("scp -t %s", remotePath)); err != nil {
-		return err
+	// Make the file executable
+	if err := c.runCommand(fmt.Sprintf("chmod +x %s", remotePath)); err != nil {
+		return fmt.Errorf("failed to chmod: %w", err)
 	}
 
-	// Send file via SCP protocol
-	fmt.Fprintf(stdin, "C0755 %d %s\n", len(data), filepath.Base(remotePath))
-	io.Copy(stdin, strings.NewReader(string(data)))
-	fmt.Fprint(stdin, "\x00")
-	stdin.Close()
-
-	return session.Wait()
+	fmt.Println("DEBUG uploadFile: Upload successful")
+	return nil
 }
