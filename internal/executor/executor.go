@@ -3,6 +3,7 @@ package executor
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/piwi3910/openfroyo/internal/parser"
 	sshclient "github.com/piwi3910/openfroyo/internal/ssh"
@@ -80,7 +81,10 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 	}
 
 	// Resolve module path
-	modulePath := filepath.Join("modules", entry.Module, "wasm", entry.Module+".wasm")
+	// Extract the module name (last part of the path for WASM filename)
+	moduleNameParts := strings.Split(entry.Module, "/")
+	moduleName := moduleNameParts[len(moduleNameParts)-1]
+	modulePath := filepath.Join("modules", entry.Module, "wasm", moduleName+".wasm")
 
 	// Merge vars (defaults + entry-specific)
 	vars := make(map[string]interface{})

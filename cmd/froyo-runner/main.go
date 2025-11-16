@@ -142,10 +142,22 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 	// Check if the module wants us to execute a command
 	if execCmdInterface, exists := output.Facts["exec_command"]; exists {
 		if execCmd, ok := execCmdInterface.(string); ok && execCmd != "" {
-			// Execute the command on the host
-			parts := strings.Fields(execCmd)
-			if len(parts) > 0 {
-				cmd := exec.Command(parts[0], parts[1:]...)
+			// Execute the command on the host with cross-platform support
+			var cmd *exec.Cmd
+
+			// Platform-specific command execution
+			if os.Getenv("OS") != "" && strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
+				// Windows: use cmd.exe /c for command execution
+				cmd = exec.Command("cmd.exe", "/c", execCmd)
+			} else {
+				// Unix-like (Linux, macOS, FreeBSD): parse and execute directly
+				parts := strings.Fields(execCmd)
+				if len(parts) > 0 {
+					cmd = exec.Command(parts[0], parts[1:]...)
+				}
+			}
+
+			if cmd != nil {
 				cmdOutput, cmdErr := cmd.CombinedOutput()
 
 				if cmdErr != nil {
