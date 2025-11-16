@@ -1,0 +1,514 @@
+# SONiC Module Test File
+# This file contains comprehensive examples for testing the SONiC module
+
+name: SONiC Module Test Suite
+inventory:
+  - "@group:sonic_switches"
+
+defaults:
+  sonic_host: 192.168.1.10
+  sonic_user: admin
+  sonic_pass: YourPaSsWoRd
+
+run:
+  # Test 1: VLAN Management
+  - name: "Test 1: VLAN Management"
+    tasks:
+      - name: Create VLAN 100
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_vlan
+          vlan_id: 100
+
+      - name: Create VLAN 200
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_vlan
+          vlan_id: 200
+
+      - name: Add Ethernet0 to VLAN 100 (untagged)
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_vlan_member
+          vlan_id: 100
+          interface: Ethernet0
+          tagged: false
+
+      - name: Add Ethernet4 to VLAN 200 (tagged)
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_vlan_member
+          vlan_id: 200
+          interface: Ethernet4
+          tagged: true
+
+      - name: Show VLAN configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_vlan
+
+  # Test 2: Interface Configuration
+  - name: "Test 2: Interface Configuration"
+    tasks:
+      - name: Configure Ethernet8 IP address
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_interface_ip
+          interface: Ethernet8
+          ip_address: 10.0.0.1
+          prefix_length: 24
+
+      - name: Set Ethernet12 MTU to 9000
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_interface_mtu
+          interface: Ethernet12
+          mtu: 9000
+
+      - name: Set Ethernet16 speed to 100G
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_interface_speed
+          interface: Ethernet16
+          speed: 100000
+
+      - name: Enable Ethernet8
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: startup_interface
+          interface: Ethernet8
+
+      - name: Show interface status
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_interface_status
+
+  # Test 3: Port Channel Configuration
+  - name: "Test 3: Port Channel (LAG) Configuration"
+    tasks:
+      - name: Create PortChannel0001
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_portchannel
+          portchannel: PortChannel0001
+
+      - name: Add Ethernet20 to PortChannel0001
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_portchannel_member
+          portchannel: PortChannel0001
+          interface: Ethernet20
+
+      - name: Add Ethernet24 to PortChannel0001
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_portchannel_member
+          portchannel: PortChannel0001
+          interface: Ethernet24
+
+      - name: Configure PortChannel0001 IP address
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_interface_ip
+          interface: PortChannel0001
+          ip_address: 10.1.1.1
+          prefix_length: 30
+
+      - name: Show port channel configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_portchannel
+
+  # Test 4: BGP Configuration
+  - name: "Test 4: BGP Configuration"
+    tasks:
+      - name: Configure BGP instance
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: configure_bgp
+          bgp_asn: 65000
+          router_id: 10.0.0.1
+
+      - name: Add BGP neighbor 10.0.0.2
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_bgp_neighbor
+          bgp_asn: 65000
+          neighbor_ip: 10.0.0.2
+          neighbor_asn: 65001
+
+      - name: Add BGP neighbor 10.0.0.3
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_bgp_neighbor
+          bgp_asn: 65000
+          neighbor_ip: 10.0.0.3
+          neighbor_asn: 65002
+
+      - name: Advertise network 192.168.0.0/16
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: configure_bgp_network
+          bgp_asn: 65000
+          network: 192.168.0.0/16
+
+      - name: Show BGP summary
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_bgp_summary
+
+  # Test 5: ACL Configuration
+  - name: "Test 5: ACL Configuration"
+    tasks:
+      - name: Create ACL table DATA_ACL
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_acl_table
+          table_name: DATA_ACL
+          table_type: L3
+          stage: INGRESS
+
+      - name: Add ACL rule to block SSH from 192.168.100.0/24
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_acl_rule
+          table_name: DATA_ACL
+          rule_name: BLOCK_SSH
+          priority: 100
+          action: DROP
+          src_ip: 192.168.100.0/24
+          protocol: TCP
+          dst_port: 22
+
+      - name: Add ACL rule to allow HTTP
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_acl_rule
+          table_name: DATA_ACL
+          rule_name: ALLOW_HTTP
+          priority: 50
+          action: FORWARD
+          protocol: TCP
+          dst_port: 80
+
+      - name: Show ACL configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_acl
+
+  # Test 6: Static Route Configuration
+  - name: "Test 6: Static Route Configuration"
+    tasks:
+      - name: Add static route to 172.16.0.0/16
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_static_route
+          prefix: 172.16.0.0/16
+          nexthop: 10.0.0.254
+
+      - name: Add static route to 10.100.0.0/16
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_static_route
+          prefix: 10.100.0.0/16
+          nexthop: 10.0.0.253
+
+      - name: Show IP routing table
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_ip_route
+
+  # Test 7: System Configuration
+  - name: "Test 7: System Configuration"
+    tasks:
+      - name: Set hostname to dc1-leaf-01
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_hostname
+          hostname: dc1-leaf-01
+
+      - name: Configure NTP server
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: configure_ntp
+          ntp_server: 0.pool.ntp.org
+
+      - name: Show running configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: show_running_config
+
+      - name: Save configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: save_config
+
+  # Test 8: Data Center Leaf Switch Complete Configuration
+  - name: "Test 8: Complete Data Center Leaf Switch Configuration"
+    tasks:
+      - name: Set hostname
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_hostname
+          hostname: dc1-leaf-02
+
+      - name: Create server VLANs
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_vlan
+          vlan_id: 100
+
+      - name: Create storage VLAN
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: create_vlan
+          vlan_id: 300
+
+      - name: Add server port to VLAN 100
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_vlan_member
+          vlan_id: 100
+          interface: Ethernet0
+          tagged: false
+
+      - name: Configure uplink to spine switch
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: set_interface_ip
+          interface: Ethernet48
+          ip_address: 10.255.1.1
+          prefix_length: 31
+
+      - name: Enable uplink interface
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: startup_interface
+          interface: Ethernet48
+
+      - name: Configure BGP
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: configure_bgp
+          bgp_asn: 65002
+          router_id: 10.0.0.2
+
+      - name: Add BGP neighbor (spine)
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: add_bgp_neighbor
+          bgp_asn: 65002
+          neighbor_ip: 10.255.1.0
+          neighbor_asn: 65100
+
+      - name: Configure NTP
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: configure_ntp
+          ntp_server: 10.0.0.254
+
+      - name: Save configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: save_config
+
+  # Test 9: Cleanup Operations (Remove configurations)
+  - name: "Test 9: Cleanup Operations"
+    tasks:
+      - name: Remove VLAN member
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: remove_vlan_member
+          vlan_id: 100
+          interface: Ethernet0
+
+      - name: Delete VLAN 100
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: delete_vlan
+          vlan_id: 100
+
+      - name: Remove port channel member
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: remove_portchannel_member
+          portchannel: PortChannel0001
+          interface: Ethernet20
+
+      - name: Delete port channel
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: delete_portchannel
+          portchannel: PortChannel0001
+
+      - name: Remove BGP neighbor
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: remove_bgp_neighbor
+          bgp_asn: 65000
+          neighbor_ip: 10.0.0.2
+
+      - name: Delete static route
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: delete_static_route
+          prefix: 172.16.0.0/16
+          nexthop: 10.0.0.254
+
+      - name: Delete ACL table
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: delete_acl_table
+          table_name: DATA_ACL
+
+      - name: Save configuration
+        module: networking/sonic
+        vars:
+          host: "{{ defaults.sonic_host }}"
+          username: "{{ defaults.sonic_user }}"
+          password: "{{ defaults.sonic_pass }}"
+          command: save_config

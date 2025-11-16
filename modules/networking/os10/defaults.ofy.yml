@@ -1,0 +1,27 @@
+# Default connection settings
+use_rest: true
+validate_certs: false
+port: 443
+ssh_port: 22
+
+# Default command (show running config)
+command: show_running_config
+
+# Default interface settings
+duplex: auto
+shutdown: false
+switchport_mode: access
+
+# Default LAG settings
+lag_mode: active
+
+# Default STP settings
+stp_mode: rstp
+stp_priority: 32768
+
+# Default user role
+role: sysadmin
+
+# Default ACL settings
+acl_type: standard
+action: permit

@@ -1,0 +1,70 @@
+name: os10
+version: 1.0.0
+description: Dell OS10 switch management module supporting VLAN, interface, LAG, Layer 3, STP, system, user, and ACL configuration
+
+steps:
+  - name: Execute Dell OS10 command
+    wasm: wasm/os10.wasm
+    vars:
+      # Connection parameters
+      host: "{{ var.host }}"
+      username: "{{ var.username }}"
+      password: "{{ var.password }}"
+      use_rest: "{{ var.use_rest | default('true') }}"
+      validate_certs: "{{ var.validate_certs | default('false') }}"
+      port: "{{ var.port | default('443') }}"
+      ssh_port: "{{ var.ssh_port | default('22') }}"
+
+      # Operation
+      command: "{{ var.command }}"
+
+      # VLAN parameters
+      vlan_id: "{{ var.vlan_id | default('') }}"
+      vlan_name: "{{ var.vlan_name | default('') }}"
+      vlan_description: "{{ var.vlan_description | default('') }}"
+
+      # Interface parameters
+      interface: "{{ var.interface | default('') }}"
+      description: "{{ var.description | default('') }}"
+      mtu: "{{ var.mtu | default('') }}"
+      speed: "{{ var.speed | default('') }}"
+      duplex: "{{ var.duplex | default('') }}"
+      shutdown: "{{ var.shutdown | default('') }}"
+      switchport_mode: "{{ var.switchport_mode | default('') }}"
+      access_vlan: "{{ var.access_vlan | default('') }}"
+      trunk_allowed_vlans: "{{ var.trunk_allowed_vlans | default('') }}"
+      native_vlan: "{{ var.native_vlan | default('') }}"
+
+      # Port Channel/LAG parameters
+      port_channel_id: "{{ var.port_channel_id | default('') }}"
+      lag_mode: "{{ var.lag_mode | default('') }}"
+
+      # Layer 3 parameters
+      ip_address: "{{ var.ip_address | default('') }}"
+      netmask: "{{ var.netmask | default('') }}"
+      gateway: "{{ var.gateway | default('') }}"
+      destination: "{{ var.destination | default('') }}"
+      next_hop: "{{ var.next_hop | default('') }}"
+
+      # Spanning Tree parameters
+      stp_mode: "{{ var.stp_mode | default('') }}"
+      stp_priority: "{{ var.stp_priority | default('') }}"
+
+      # System parameters
+      hostname: "{{ var.hostname | default('') }}"
+      ntp_server: "{{ var.ntp_server | default('') }}"
+      dns_server: "{{ var.dns_server | default('') }}"
+
+      # User management parameters
+      user: "{{ var.user | default('') }}"
+      role: "{{ var.role | default('') }}"
+      new_password: "{{ var.new_password | default('') }}"
+
+      # ACL parameters
+      acl_name: "{{ var.acl_name | default('') }}"
+      acl_type: "{{ var.acl_type | default('') }}"
+      sequence: "{{ var.sequence | default('') }}"
+      action: "{{ var.action | default('') }}"
+      protocol: "{{ var.protocol | default('') }}"
+      source: "{{ var.source | default('') }}"
+      destination_acl: "{{ var.destination_acl | default('') }}"

@@ -1,0 +1,78 @@
+---
+# Dell PowerScale (Isilon) Module Default Variables
+
+# Connection Settings
+powerscale_host: ""           # Required: PowerScale cluster IP or hostname
+powerscale_user: "admin"      # Default admin user
+powerscale_password: ""       # Required: Admin password
+powerscale_port: 8080         # Platform API port
+validate_certs: false         # Set to true in production with valid certificates
+
+# Operation
+command: ""                   # Required: Operation to perform
+
+# SMB Share Settings
+share_name: ""                # SMB share name
+path: ""                      # File system path (e.g., /ifs/data/share)
+access_zone: "System"         # Access zone (default: System)
+description: ""               # Share description
+browsable: true               # Show share in network browse list
+ntfs_acl_support: true        # Enable NTFS ACL support
+permissions: []               # List of permission objects
+
+# NFS Export Settings
+export_path: ""               # Single export path
+export_paths: []              # Multiple export paths
+clients: []                   # List of client IPs or networks
+read_only: false              # Read-only export
+root_clients: []              # Clients with root access
+security_flavors: ["unix"]    # Security flavors: unix, krb5, krb5i, krb5p
+map_root: ""                  # Map root user to specified user
+map_all: ""                   # Map all users to specified user
+
+# Quota Settings
+quota_path: ""                # Path for quota
+quota_type: "directory"       # Type: directory, user, group, default-user, default-group
+hard_threshold: 0             # Hard limit in bytes
+soft_threshold: 0             # Soft limit in bytes
+advisory_threshold: 0         # Advisory threshold in bytes
+quota_user: ""                # User name for user quotas
+quota_group: ""               # Group name for group quotas
+enforce: true                 # Enforce quota limits
+
+# Snapshot Settings
+snapshot_name: ""             # Snapshot name
+snapshot_path: ""             # Path to snapshot
+snapshot_alias: ""            # Snapshot alias
+snapshot_id: ""               # Snapshot ID for operations
+schedule: ""                  # Cron expression for snapshot schedule
+schedule_name: ""             # Schedule name
+pattern: ""                   # Snapshot naming pattern
+duration: ""                  # Snapshot duration
+retention: ""                 # Snapshot retention period
+
+# Access Zone Settings
+zone_name: ""                 # Access zone name
+groupnet: "groupnet0"         # Groupnet name
+auth_providers: []            # Authentication providers
+
+# User/Group Settings
+user_name: ""                 # User name
+user_id: ""                   # User ID (UID)
+group_name: ""                # Group name
+group_id: ""                  # Group ID (GID)
+primary_group: ""             # Primary group for user
+home_directory: ""            # User home directory
+shell: "/bin/bash"            # User shell
+
+# SyncIQ Settings
+policy_name: ""               # SyncIQ policy name
+source_root_path: ""          # Source path for replication
+target_host: ""               # Target cluster hostname
+target_path: ""               # Target path for replication
+action: "sync"                # Action: sync, copy
+enabled: true                 # Enable policy
+
+# Generic Settings
+state: "present"              # State: present, absent
+force: false                  # Force operation

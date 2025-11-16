@@ -1,0 +1,604 @@
+# Dell OS10 Module - Comprehensive Test Examples
+
+# This file contains test examples for all Dell OS10 module commands.
+# Adjust the host IP, username, and password to match your environment.
+
+inventory:
+  hosts:
+    - test-switch
+
+defaults:
+  host: 192.168.1.10
+  username: admin
+  password: admin123
+  use_rest: true
+  validate_certs: false
+
+run:
+  # ============================================================================
+  # VLAN Management Tests
+  # ============================================================================
+
+  - name: VLAN Management Tests
+    tasks:
+      - name: Create VLAN 100
+        module: networking/os10
+        vars:
+          command: create_vlan
+          vlan_id: 100
+          vlan_name: TEST_DATA
+
+      - name: Create VLAN 200
+        module: networking/os10
+        vars:
+          command: create_vlan
+          vlan_id: 200
+          vlan_name: TEST_VOICE
+
+      - name: Configure VLAN 100 with description
+        module: networking/os10
+        vars:
+          command: configure_vlan
+          vlan_id: 100
+          vlan_name: PRODUCTION_DATA
+          vlan_description: Production data network
+
+      - name: Show all VLANs
+        module: networking/os10
+        vars:
+          command: show_vlan
+
+      - name: Show VLAN 100 details
+        module: networking/os10
+        vars:
+          command: show_vlan
+          vlan_id: 100
+
+      - name: Show VLAN brief
+        module: networking/os10
+        vars:
+          command: show_vlan_brief
+
+  # ============================================================================
+  # Interface Management Tests
+  # ============================================================================
+
+  - name: Interface Management Tests
+    tasks:
+      - name: Configure interface as access port
+        module: networking/os10
+        vars:
+          command: configure_interface
+          interface: ethernet 1/1/10
+          description: Test Server Port
+          switchport_mode: access
+          access_vlan: 100
+          mtu: 1500
+          shutdown: false
+
+      - name: Configure interface as trunk port
+        module: networking/os10
+        vars:
+          command: configure_interface
+          interface: ethernet 1/1/1
+          description: Uplink to Core
+          switchport_mode: trunk
+          trunk_allowed_vlans: 100,200
+          mtu: 9000
+          shutdown: false
+
+      - name: Set interface description
+        module: networking/os10
+        vars:
+          command: set_description
+          interface: ethernet 1/1/11
+          description: Updated description
+
+      - name: Set interface MTU
+        module: networking/os10
+        vars:
+          command: set_mtu
+          interface: ethernet 1/1/1
+          mtu: 9000
+
+      - name: Set interface speed
+        module: networking/os10
+        vars:
+          command: set_speed
+          interface: ethernet 1/1/1
+          speed: 10000
+
+      - name: Shutdown interface
+        module: networking/os10
+        vars:
+          command: shutdown_interface
+          interface: ethernet 1/1/20
+
+      - name: Enable interface
+        module: networking/os10
+        vars:
+          command: no_shutdown_interface
+          interface: ethernet 1/1/20
+
+      - name: Show all interfaces
+        module: networking/os10
+        vars:
+          command: show_interface
+
+      - name: Show specific interface
+        module: networking/os10
+        vars:
+          command: show_interface
+          interface: ethernet 1/1/1
+
+      - name: Show interface status
+        module: networking/os10
+        vars:
+          command: show_interface_status
+
+  # ============================================================================
+  # Port Channel/LAG Tests
+  # ============================================================================
+
+  - name: Port Channel Tests
+    tasks:
+      - name: Create port channel 10
+        module: networking/os10
+        vars:
+          command: create_port_channel
+          port_channel_id: 10
+          lag_mode: active
+
+      - name: Add interface to LAG
+        module: networking/os10
+        vars:
+          command: add_interface_to_lag
+          interface: ethernet 1/1/1
+          port_channel_id: 10
+          lag_mode: active
+
+      - name: Add second interface to LAG
+        module: networking/os10
+        vars:
+          command: add_interface_to_lag
+          interface: ethernet 1/1/2
+          port_channel_id: 10
+          lag_mode: active
+
+      - name: Configure port channel as trunk
+        module: networking/os10
+        vars:
+          command: configure_interface
+          interface: port-channel 10
+          description: LAG to Distribution
+          switchport_mode: trunk
+          trunk_allowed_vlans: 100,200
+
+      - name: Remove interface from LAG
+        module: networking/os10
+        vars:
+          command: remove_interface_from_lag
+          interface: ethernet 1/1/2
+          port_channel_id: 10
+
+  # ============================================================================
+  # Layer 3 Configuration Tests
+  # ============================================================================
+
+  - name: Layer 3 Configuration Tests
+    tasks:
+      - name: Create VLAN interface with IP
+        module: networking/os10
+        vars:
+          command: create_vlan_interface
+          vlan_id: 100
+          ip_address: 192.168.100.1
+          netmask: 255.255.255.0
+
+      - name: Create another VLAN interface
+        module: networking/os10
+        vars:
+          command: create_vlan_interface
+          vlan_id: 200
+          ip_address: 192.168.200.1
+          netmask: 255.255.255.0
+
+      - name: Configure IP on physical interface
+        module: networking/os10
+        vars:
+          command: configure_ip_interface
+          interface: ethernet 1/1/5
+          ip_address: 10.0.0.1
+          netmask: 255.255.255.252
+
+      - name: Add static route
+        module: networking/os10
+        vars:
+          command: configure_static_route
+          destination: 10.10.0.0
+          netmask: 255.255.0.0
+          next_hop: 192.168.100.254
+
+      - name: Add default route
+        module: networking/os10
+        vars:
+          command: configure_static_route
+          destination: 0.0.0.0
+          netmask: 0.0.0.0
+          next_hop: 192.168.1.1
+
+      - name: Show IP interfaces
+        module: networking/os10
+        vars:
+          command: show_ip_interface
+
+      - name: Show specific IP interface
+        module: networking/os10
+        vars:
+          command: show_ip_interface
+          interface: vlan 100
+
+      - name: Show IP routing table
+        module: networking/os10
+        vars:
+          command: show_ip_route
+
+  # ============================================================================
+  # Spanning Tree Tests
+  # ============================================================================
+
+  - name: Spanning Tree Tests
+    tasks:
+      - name: Configure RSTP mode
+        module: networking/os10
+        vars:
+          command: configure_spanning_tree
+          stp_mode: rstp
+
+      - name: Set global STP priority
+        module: networking/os10
+        vars:
+          command: set_stp_priority
+          stp_priority: 4096
+
+      - name: Set per-VLAN STP priority
+        module: networking/os10
+        vars:
+          command: set_stp_priority
+          stp_priority: 8192
+          vlan_id: 100
+
+      - name: Show spanning tree
+        module: networking/os10
+        vars:
+          command: show_spanning_tree
+
+      - name: Show spanning tree for VLAN
+        module: networking/os10
+        vars:
+          command: show_spanning_tree
+          vlan_id: 100
+
+  # ============================================================================
+  # System Configuration Tests
+  # ============================================================================
+
+  - name: System Configuration Tests
+    tasks:
+      - name: Set hostname
+        module: networking/os10
+        vars:
+          command: set_hostname
+          hostname: TEST-SW-01
+
+      - name: Configure NTP server
+        module: networking/os10
+        vars:
+          command: configure_ntp
+          ntp_server: 10.0.0.1
+
+      - name: Configure DNS server
+        module: networking/os10
+        vars:
+          command: configure_dns
+          dns_server: 8.8.8.8
+
+      - name: Show running configuration
+        module: networking/os10
+        vars:
+          command: show_running_config
+
+      - name: Save configuration
+        module: networking/os10
+        vars:
+          command: save_config
+
+  # ============================================================================
+  # User Management Tests
+  # ============================================================================
+
+  - name: User Management Tests
+    tasks:
+      - name: Create operator user
+        module: networking/os10
+        vars:
+          command: create_user
+          user: testops
+          new_password: TestPass123!
+          role: netoperator
+
+      - name: Create admin user
+        module: networking/os10
+        vars:
+          command: create_user
+          user: testadmin
+          new_password: AdminPass456!
+          role: sysadmin
+
+      - name: Change user password
+        module: networking/os10
+        vars:
+          command: change_password
+          user: testops
+          new_password: NewPass789!
+
+      - name: Delete user
+        module: networking/os10
+        vars:
+          command: delete_user
+          user: testadmin
+
+  # ============================================================================
+  # ACL Configuration Tests
+  # ============================================================================
+
+  - name: ACL Configuration Tests
+    tasks:
+      - name: Create standard ACL
+        module: networking/os10
+        vars:
+          command: create_acl
+          acl_name: TEST_MGMT_ACCESS
+          acl_type: standard
+          sequence: 10
+          action: permit
+          source: 192.168.1.0/24
+
+      - name: Create extended ACL for web traffic
+        module: networking/os10
+        vars:
+          command: create_acl
+          acl_name: TEST_WEB_ACCESS
+          acl_type: extended
+          sequence: 10
+          action: permit
+          protocol: tcp
+          source: any
+          destination_acl: 192.168.100.10/32
+
+      - name: Show all ACLs
+        module: networking/os10
+        vars:
+          command: show_acl
+
+      - name: Show specific ACL
+        module: networking/os10
+        vars:
+          command: show_acl
+          acl_name: TEST_MGMT_ACCESS
+
+      - name: Delete ACL
+        module: networking/os10
+        vars:
+          command: delete_acl
+          acl_name: TEST_WEB_ACCESS
+          acl_type: extended
+
+  # ============================================================================
+  # Cleanup Tests (Optional - comment out if you want to keep test config)
+  # ============================================================================
+
+  - name: Cleanup Test Configuration
+    tasks:
+      - name: Delete port channel
+        module: networking/os10
+        vars:
+          command: delete_port_channel
+          port_channel_id: 10
+
+      - name: Delete VLAN 100
+        module: networking/os10
+        vars:
+          command: delete_vlan
+          vlan_id: 100
+
+      - name: Delete VLAN 200
+        module: networking/os10
+        vars:
+          command: delete_vlan
+          vlan_id: 200
+
+      - name: Delete test user
+        module: networking/os10
+        vars:
+          command: delete_user
+          user: testops
+
+      - name: Delete test ACL
+        module: networking/os10
+        vars:
+          command: delete_acl
+          acl_name: TEST_MGMT_ACCESS
+          acl_type: standard
+
+      - name: Save final configuration
+        module: networking/os10
+        vars:
+          command: save_config
+
+# ============================================================================
+# Additional Test Scenarios
+# ============================================================================
+
+# Uncomment the following sections to test specific scenarios:
+
+# --- Test REST API vs CLI ---
+# run:
+#   - name: Test with REST API
+#     tasks:
+#       - name: Show VLANs via REST
+#         module: networking/os10
+#         vars:
+#           use_rest: true
+#           command: show_vlan_brief
+#
+#   - name: Test with CLI
+#     tasks:
+#       - name: Show VLANs via CLI
+#         module: networking/os10
+#         vars:
+#           use_rest: false
+#           command: show_vlan_brief
+
+# --- Test Complete Edge Switch Configuration ---
+# run:
+#   - name: Configure Complete Edge Switch
+#     tasks:
+#       - name: Set hostname
+#         module: networking/os10
+#         vars:
+#           command: set_hostname
+#           hostname: EDGE-SW-01
+#
+#       - name: Create VLANs
+#         module: networking/os10
+#         vars:
+#           command: create_vlan
+#           vlan_id: "{{ item }}"
+#         loop:
+#           - 10
+#           - 20
+#           - 30
+#           - 99
+#
+#       - name: Configure uplink
+#         module: networking/os10
+#         vars:
+#           command: configure_interface
+#           interface: ethernet 1/1/1
+#           description: Uplink to Distribution
+#           switchport_mode: trunk
+#           trunk_allowed_vlans: 10,20,30,99
+#
+#       - name: Configure access ports
+#         module: networking/os10
+#         vars:
+#           command: configure_interface
+#           interface: "ethernet 1/1/{{ item }}"
+#           description: "Access Port {{ item }}"
+#           switchport_mode: access
+#           access_vlan: 10
+#         loop: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+#
+#       - name: Save configuration
+#         module: networking/os10
+#         vars:
+#           command: save_config
+
+# --- Test Layer 3 Switch Configuration ---
+# run:
+#   - name: Configure L3 Switch
+#     tasks:
+#       - name: Create VLANs
+#         module: networking/os10
+#         vars:
+#           command: create_vlan
+#           vlan_id: "{{ item.id }}"
+#           vlan_name: "{{ item.name }}"
+#         loop:
+#           - { id: 10, name: USERS }
+#           - { id: 20, name: SERVERS }
+#           - { id: 30, name: GUEST }
+#
+#       - name: Create VLAN interfaces with IPs
+#         module: networking/os10
+#         vars:
+#           command: create_vlan_interface
+#           vlan_id: "{{ item.id }}"
+#           ip_address: "{{ item.ip }}"
+#           netmask: 255.255.255.0
+#         loop:
+#           - { id: 10, ip: 10.0.10.1 }
+#           - { id: 20, ip: 10.0.20.1 }
+#           - { id: 30, ip: 10.0.30.1 }
+#
+#       - name: Configure routing
+#         module: networking/os10
+#         vars:
+#           command: configure_static_route
+#           destination: 0.0.0.0
+#           netmask: 0.0.0.0
+#           next_hop: 10.0.1.1
+#
+#       - name: Save configuration
+#         module: networking/os10
+#         vars:
+#           command: save_config
+
+# --- Test HA Pair Configuration ---
+# inventory:
+#   groups:
+#     - name: core-switches
+#       hosts:
+#         - core-sw-01
+#         - core-sw-02
+#
+# run:
+#   - name: Configure CORE-SW-01
+#     hosts: core-sw-01
+#     vars:
+#       host: 192.168.1.11
+#     tasks:
+#       - name: Set hostname
+#         module: networking/os10
+#         vars:
+#           command: set_hostname
+#           hostname: CORE-SW-01
+#
+#       - name: Set STP priority (primary)
+#         module: networking/os10
+#         vars:
+#           command: set_stp_priority
+#           stp_priority: 4096
+#
+#   - name: Configure CORE-SW-02
+#     hosts: core-sw-02
+#     vars:
+#       host: 192.168.1.12
+#     tasks:
+#       - name: Set hostname
+#         module: networking/os10
+#         vars:
+#           command: set_hostname
+#           hostname: CORE-SW-02
+#
+#       - name: Set STP priority (secondary)
+#         module: networking/os10
+#         vars:
+#           command: set_stp_priority
+#           stp_priority: 8192
+#
+#   - name: Configure VLANs on both
+#     hosts: "@group:core-switches"
+#     tasks:
+#       - name: Create production VLANs
+#         module: networking/os10
+#         vars:
+#           command: create_vlan
+#           vlan_id: "{{ item }}"
+#         loop: [10, 20, 30, 40, 50]
+#
+#       - name: Save configuration
+#         module: networking/os10
+#         vars:
+#           command: save_config

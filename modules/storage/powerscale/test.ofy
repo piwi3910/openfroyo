@@ -1,0 +1,254 @@
+---
+# Dell PowerScale (Isilon) NAS Management Test Stack
+# This stack demonstrates various PowerScale operations
+
+inventory: local
+
+defaults:
+  # PowerScale connection settings
+  powerscale_host: "192.168.1.100"
+  powerscale_user: "admin"
+  powerscale_password: "your-password-here"
+  powerscale_port: 8080
+  validate_certs: false
+
+run:
+  # 1. Cluster Information
+  - name: "Get cluster configuration"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_config
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  - name: "Get cluster version"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_version
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  - name: "Get cluster capacity"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_capacity
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 2. SMB Share Management
+  - name: "Create SMB share for data"
+    module: storage.powerscale
+    vars:
+      command: create_smb_share
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      share_name: "data_share"
+      path: "/ifs/data/share"
+      description: "Main data share"
+      browsable: true
+      ntfs_acl_support: true
+
+  - name: "List all SMB shares"
+    module: storage.powerscale
+    vars:
+      command: show_smb_shares
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  - name: "Show specific SMB share"
+    module: storage.powerscale
+    vars:
+      command: show_smb_share
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      share_name: "data_share"
+
+  # 3. NFS Export Management
+  - name: "Create NFS export"
+    module: storage.powerscale
+    vars:
+      command: create_nfs_export
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      export_paths:
+        - "/ifs/data/nfs_export"
+      clients:
+        - "192.168.1.0/24"
+      read_only: false
+      root_clients:
+        - "192.168.1.50"
+
+  - name: "List all NFS exports"
+    module: storage.powerscale
+    vars:
+      command: show_nfs_exports
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 4. Quota Management
+  - name: "Create directory quota"
+    module: storage.powerscale
+    vars:
+      command: create_quota
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      quota_path: "/ifs/data/share"
+      quota_type: "directory"
+      hard_threshold: 1099511627776  # 1TB in bytes
+      soft_threshold: 966367641600   # 900GB in bytes
+      enforce: true
+
+  - name: "Create user quota"
+    module: storage.powerscale
+    vars:
+      command: create_quota
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      quota_path: "/ifs/home"
+      quota_type: "user"
+      quota_user: "jdoe"
+      hard_threshold: 107374182400  # 100GB in bytes
+      enforce: true
+
+  - name: "List all quotas"
+    module: storage.powerscale
+    vars:
+      command: show_quotas
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 5. Snapshot Management
+  - name: "Create snapshot"
+    module: storage.powerscale
+    vars:
+      command: create_snapshot
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      snapshot_path: "/ifs/data"
+      snapshot_name: "data_backup_manual"
+      snapshot_alias: "latest_backup"
+
+  - name: "Create snapshot schedule"
+    module: storage.powerscale
+    vars:
+      command: create_snapshot_schedule
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      schedule_name: "daily_backup"
+      snapshot_path: "/ifs/data"
+      schedule: "0 2 * * *"  # Daily at 2 AM
+      pattern: "daily-%Y%m%d"
+      retention: "7 days"
+
+  - name: "List all snapshots"
+    module: storage.powerscale
+    vars:
+      command: show_snapshots
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 6. Access Zone Management
+  - name: "Create access zone"
+    module: storage.powerscale
+    vars:
+      command: create_access_zone
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      zone_name: "production"
+      path: "/ifs/zones/production"
+      groupnet: "groupnet0"
+
+  - name: "List all access zones"
+    module: storage.powerscale
+    vars:
+      command: show_access_zones
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 7. User and Group Management
+  - name: "Create user"
+    module: storage.powerscale
+    vars:
+      command: create_user
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      user_name: "jdoe"
+      user_id: "5001"
+      primary_group: "users"
+      home_directory: "/ifs/home/jdoe"
+      shell: "/bin/bash"
+
+  - name: "Create group"
+    module: storage.powerscale
+    vars:
+      command: create_group
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      group_name: "developers"
+      group_id: "6001"
+
+  # 8. SyncIQ Replication
+  - name: "Create SyncIQ policy"
+    module: storage.powerscale
+    vars:
+      command: create_synciq_policy
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      policy_name: "DR_replication"
+      source_root_path: "/ifs/data"
+      target_host: "192.168.2.100"
+      target_path: "/ifs/dr/data"
+      action: "sync"
+      enabled: true
+
+  - name: "List SyncIQ policies"
+    module: storage.powerscale
+    vars:
+      command: show_synciq_policies
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  # 9. Health and Performance Monitoring
+  - name: "Get cluster health"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_health
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  - name: "Get cluster performance metrics"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_performance
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+
+  - name: "Get cluster nodes"
+    module: storage.powerscale
+    vars:
+      command: show_cluster_nodes
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user }}"
+      powerscale_password: "{{ var.powerscale_password }}"

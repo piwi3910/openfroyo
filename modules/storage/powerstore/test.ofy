@@ -1,0 +1,259 @@
+# Dell PowerStore Module Test Stack
+
+inventory:
+  - local
+
+defaults:
+  powerstore_host: "192.168.1.100"
+  powerstore_user: "admin"
+  powerstore_password: "Password123!"
+  validate_certs: false
+
+run:
+  # =============================================================================
+  # System Information Tests
+  # =============================================================================
+
+  - name: Get cluster information
+    module: storage/powerstore
+    vars:
+      command: show_cluster_info
+
+  - name: List all appliances
+    module: storage/powerstore
+    vars:
+      command: show_appliances
+
+  - name: List all nodes
+    module: storage/powerstore
+    vars:
+      command: show_nodes
+
+  - name: Show capacity information
+    module: storage/powerstore
+    vars:
+      command: show_capacity
+
+  - name: Show system alerts
+    module: storage/powerstore
+    vars:
+      command: show_alerts
+
+  # =============================================================================
+  # Host Management Tests
+  # =============================================================================
+
+  - name: Create host for application server
+    module: storage/powerstore
+    vars:
+      command: create_host
+      host_name: "app-server-01"
+      os_type: "Linux"
+      description: "Application server host"
+      initiators:
+        - "iqn.1993-08.org.debian:01:app-server-01"
+
+  - name: List all hosts
+    module: storage/powerstore
+    vars:
+      command: show_hosts
+
+  - name: Create host group for application tier
+    module: storage/powerstore
+    vars:
+      command: create_host_group
+      host_group_name: "app-tier"
+      description: "Application tier host group"
+
+  - name: Add host to group
+    module: storage/powerstore
+    vars:
+      command: add_host_to_group
+      host_group_id: "{{ facts.host_group_id }}"
+      host_id: "{{ facts.host_id }}"
+
+  # =============================================================================
+  # Volume Management Tests
+  # =============================================================================
+
+  - name: Create 100GB volume for application data
+    module: storage/powerstore
+    vars:
+      command: create_volume
+      volume_name: "app-data-vol-01"
+      volume_size: 100
+      description: "Application data volume"
+
+  - name: Create 500GB volume for database
+    module: storage/powerstore
+    vars:
+      command: create_volume
+      volume_name: "db-data-vol-01"
+      volume_size: 500
+      description: "Database data volume"
+
+  - name: List all volumes
+    module: storage/powerstore
+    vars:
+      command: show_volumes
+
+  - name: Get volume details
+    module: storage/powerstore
+    vars:
+      command: show_volume_details
+      volume_id: "{{ facts.volume_id }}"
+
+  - name: Map volume to host
+    module: storage/powerstore
+    vars:
+      command: map_volume
+      volume_id: "{{ facts.volume_id }}"
+      host_id: "{{ facts.host_id }}"
+
+  - name: Resize volume to 200GB
+    module: storage/powerstore
+    vars:
+      command: resize_volume
+      volume_id: "{{ facts.volume_id }}"
+      new_size: 200
+
+  - name: Clone volume for testing
+    module: storage/powerstore
+    vars:
+      command: clone_volume
+      volume_id: "{{ facts.volume_id }}"
+      clone_name: "app-data-vol-01-clone"
+      description: "Clone for testing purposes"
+
+  # =============================================================================
+  # Snapshot Management Tests
+  # =============================================================================
+
+  - name: Create snapshot of application volume
+    module: storage/powerstore
+    vars:
+      command: create_snapshot
+      volume_id: "{{ facts.volume_id }}"
+      snapshot_name: "app-data-snap-001"
+      description: "Pre-upgrade snapshot"
+
+  - name: Create snapshot rule for daily backups
+    module: storage/powerstore
+    vars:
+      command: create_snapshot_rule
+      snapshot_rule_name: "daily-backup-rule"
+      desired_retention: 168  # 7 days
+      interval: "Every_24_Hours"
+
+  - name: List all snapshots
+    module: storage/powerstore
+    vars:
+      command: show_snapshots
+
+  - name: List snapshots for specific volume
+    module: storage/powerstore
+    vars:
+      command: show_snapshots
+      volume_id: "{{ facts.volume_id }}"
+
+  # =============================================================================
+  # Performance Monitoring Tests
+  # =============================================================================
+
+  - name: Get volume performance metrics
+    module: storage/powerstore
+    vars:
+      command: show_volume_metrics
+      volume_id: "{{ facts.volume_id }}"
+      interval: "Five_Mins"
+
+  - name: Get appliance metrics
+    module: storage/powerstore
+    vars:
+      command: show_appliance_metrics
+      appliance_id: "{{ facts.appliance_id }}"
+      interval: "Five_Mins"
+
+  - name: Get node metrics
+    module: storage/powerstore
+    vars:
+      command: show_node_metrics
+      node_id: "{{ facts.node_id }}"
+      interval: "Five_Mins"
+
+  - name: Get cluster metrics
+    module: storage/powerstore
+    vars:
+      command: show_cluster_metrics
+      cluster_id: "{{ facts.cluster_id }}"
+      interval: "Five_Mins"
+
+  # =============================================================================
+  # Replication Tests (requires remote system configured)
+  # =============================================================================
+
+  - name: Create replication session
+    module: storage/powerstore
+    vars:
+      command: create_replication_session
+      volume_id: "{{ facts.volume_id }}"
+      remote_system_id: "remote-powerstore-id"
+      replication_rule: "async-replication"
+
+  - name: List replication sessions
+    module: storage/powerstore
+    vars:
+      command: show_replication_sessions
+
+  - name: Pause replication
+    module: storage/powerstore
+    vars:
+      command: pause_replication
+      replication_session_id: "{{ facts.replication_session_id }}"
+
+  - name: Resume replication
+    module: storage/powerstore
+    vars:
+      command: resume_replication
+      replication_session_id: "{{ facts.replication_session_id }}"
+
+  # =============================================================================
+  # Cleanup Tests (commented out for safety)
+  # =============================================================================
+
+  # - name: Delete replication session
+  #   module: storage/powerstore
+  #   vars:
+  #     command: delete_replication_session
+  #     replication_session_id: "{{ facts.replication_session_id }}"
+
+  # - name: Delete snapshot
+  #   module: storage/powerstore
+  #   vars:
+  #     command: delete_snapshot
+  #     snapshot_id: "{{ facts.snapshot_id }}"
+
+  # - name: Unmap volume from host
+  #   module: storage/powerstore
+  #   vars:
+  #     command: unmap_volume
+  #     volume_id: "{{ facts.volume_id }}"
+  #     host_id: "{{ facts.host_id }}"
+
+  # - name: Delete volume
+  #   module: storage/powerstore
+  #   vars:
+  #     command: delete_volume
+  #     volume_id: "{{ facts.volume_id }}"
+
+  # - name: Delete host
+  #   module: storage/powerstore
+  #   vars:
+  #     command: delete_host
+  #     host_id: "{{ facts.host_id }}"
+
+  # - name: Delete host group
+  #   module: storage/powerstore
+  #   vars:
+  #     command: delete_host_group
+  #     host_group_id: "{{ facts.host_group_id }}"

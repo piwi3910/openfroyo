@@ -1,0 +1,52 @@
+name: powerstore
+description: Dell PowerStore storage array management module
+version: 1.0.0
+author: OpenFroyo
+
+steps:
+  - name: Execute PowerStore command
+    wasm: wasm/powerstore.wasm
+    vars:
+      powerstore_host: "{{ var.powerstore_host }}"
+      powerstore_user: "{{ var.powerstore_user }}"
+      powerstore_password: "{{ var.powerstore_password }}"
+      validate_certs: "{{ var.validate_certs | default('false') }}"
+      port: "{{ var.port | default('443') }}"
+      command: "{{ var.command }}"
+
+      # Volume parameters
+      volume_name: "{{ var.volume_name | default('') }}"
+      volume_size: "{{ var.volume_size | default('') }}"
+      volume_id: "{{ var.volume_id | default('') }}"
+      new_size: "{{ var.new_size | default('') }}"
+      clone_name: "{{ var.clone_name | default('') }}"
+      description: "{{ var.description | default('') }}"
+
+      # Host parameters
+      host_name: "{{ var.host_name | default('') }}"
+      host_id: "{{ var.host_id | default('') }}"
+      initiators: "{{ var.initiators | default('') }}"
+      initiator: "{{ var.initiator | default('') }}"
+      os_type: "{{ var.os_type | default('') }}"
+
+      # Host group parameters
+      host_group_name: "{{ var.host_group_name | default('') }}"
+      host_group_id: "{{ var.host_group_id | default('') }}"
+
+      # Snapshot parameters
+      snapshot_name: "{{ var.snapshot_name | default('') }}"
+      snapshot_id: "{{ var.snapshot_id | default('') }}"
+      snapshot_rule_name: "{{ var.snapshot_rule_name | default('') }}"
+      snapshot_rule_id: "{{ var.snapshot_rule_id | default('') }}"
+      desired_retention: "{{ var.desired_retention | default('') }}"
+      interval: "{{ var.interval | default('') }}"
+
+      # Metrics parameters
+      appliance_id: "{{ var.appliance_id | default('') }}"
+      node_id: "{{ var.node_id | default('') }}"
+      cluster_id: "{{ var.cluster_id | default('') }}"
+
+      # Replication parameters
+      remote_system_id: "{{ var.remote_system_id | default('') }}"
+      replication_rule: "{{ var.replication_rule | default('') }}"
+      replication_session_id: "{{ var.replication_session_id | default('') }}"

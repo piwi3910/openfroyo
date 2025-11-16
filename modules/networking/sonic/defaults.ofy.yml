@@ -1,0 +1,34 @@
+# SONiC Switch Connection Defaults
+host: 192.168.1.1
+username: admin
+password: YourPaSsWoRd
+port: 443
+use_rest: true
+validate_certs: false
+
+# Default command (show_vlan as example)
+command: show_vlan
+
+# VLAN defaults
+vlan_id: 100
+tagged: false
+
+# Interface defaults
+prefix_length: 24
+mtu: 1500
+speed: 100000
+
+# Port channel defaults
+portchannel: PortChannel0001
+
+# BGP defaults
+bgp_asn: 65000
+
+# ACL defaults
+table_type: L3
+stage: INGRESS
+priority: 100
+action: FORWARD
+
+# System defaults
+remove: false

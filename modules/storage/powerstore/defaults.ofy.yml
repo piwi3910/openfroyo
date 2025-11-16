@@ -1,0 +1,48 @@
+# Default variables for Dell PowerStore module
+
+# Connection settings
+powerstore_host: ""              # PowerStore management IP or hostname
+powerstore_user: "admin"         # PowerStore username
+powerstore_password: ""          # PowerStore password
+validate_certs: false            # Whether to validate SSL certificates
+port: 443                        # PowerStore REST API port
+
+# Operation to perform
+command: ""                      # Command to execute (e.g., create_volume, show_volumes)
+
+# Volume parameters
+volume_name: ""                  # Name of the volume
+volume_size: ""                  # Size in GB for volume creation
+volume_id: ""                    # UUID of the volume
+new_size: ""                     # New size in GB for resize operation
+clone_name: ""                   # Name for cloned volume
+description: ""                  # Description for resources
+
+# Host parameters
+host_name: ""                    # Name of the host
+host_id: ""                      # UUID of the host
+initiators: []                   # List of WWNs or IQNs
+initiator: ""                    # Single WWN or IQN
+os_type: "Linux"                 # OS type: Linux, Windows, ESXi
+
+# Host group parameters
+host_group_name: ""              # Name of the host group
+host_group_id: ""                # UUID of the host group
+
+# Snapshot parameters
+snapshot_name: ""                # Name of the snapshot
+snapshot_id: ""                  # UUID of the snapshot
+snapshot_rule_name: ""           # Name of the snapshot rule
+snapshot_rule_id: ""             # UUID of the snapshot rule
+desired_retention: ""            # Retention period in hours
+interval: ""                     # Snapshot interval
+
+# Metrics parameters
+appliance_id: ""                 # UUID of the appliance
+node_id: ""                      # UUID of the node
+cluster_id: ""                   # UUID of the cluster
+
+# Replication parameters
+remote_system_id: ""             # UUID of the remote system
+replication_rule: ""             # Name of the replication rule
+replication_session_id: ""       # UUID of the replication session

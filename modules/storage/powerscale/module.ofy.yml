@@ -1,0 +1,83 @@
+name: powerscale
+version: 1.0.0
+description: Dell PowerScale (Isilon) NAS management module - SMB shares, NFS exports, quotas, snapshots, access zones, and cluster operations
+
+steps:
+  - name: Execute PowerScale operation
+    wasm: wasm/powerscale.wasm
+    vars:
+      # Connection parameters
+      powerscale_host: "{{ var.powerscale_host }}"
+      powerscale_user: "{{ var.powerscale_user | default('admin') }}"
+      powerscale_password: "{{ var.powerscale_password }}"
+      powerscale_port: "{{ var.powerscale_port | default('8080') }}"
+      validate_certs: "{{ var.validate_certs | default('false') }}"
+
+      # Operation
+      command: "{{ var.command }}"
+
+      # SMB Share parameters
+      share_name: "{{ var.share_name | default('') }}"
+      path: "{{ var.path | default('') }}"
+      access_zone: "{{ var.access_zone | default('System') }}"
+      description: "{{ var.description | default('') }}"
+      browsable: "{{ var.browsable | default('true') }}"
+      ntfs_acl_support: "{{ var.ntfs_acl_support | default('true') }}"
+      permissions: "{{ var.permissions | default('') }}"
+
+      # NFS Export parameters
+      export_path: "{{ var.export_path | default('') }}"
+      export_paths: "{{ var.export_paths | default('') }}"
+      clients: "{{ var.clients | default('') }}"
+      read_only: "{{ var.read_only | default('false') }}"
+      root_clients: "{{ var.root_clients | default('') }}"
+      security_flavors: "{{ var.security_flavors | default('') }}"
+      map_root: "{{ var.map_root | default('') }}"
+      map_all: "{{ var.map_all | default('') }}"
+
+      # Quota parameters
+      quota_path: "{{ var.quota_path | default('') }}"
+      quota_type: "{{ var.quota_type | default('directory') }}"
+      hard_threshold: "{{ var.hard_threshold | default('') }}"
+      soft_threshold: "{{ var.soft_threshold | default('') }}"
+      advisory_threshold: "{{ var.advisory_threshold | default('') }}"
+      quota_user: "{{ var.quota_user | default('') }}"
+      quota_group: "{{ var.quota_group | default('') }}"
+      enforce: "{{ var.enforce | default('true') }}"
+
+      # Snapshot parameters
+      snapshot_name: "{{ var.snapshot_name | default('') }}"
+      snapshot_path: "{{ var.snapshot_path | default('') }}"
+      snapshot_alias: "{{ var.snapshot_alias | default('') }}"
+      snapshot_id: "{{ var.snapshot_id | default('') }}"
+      schedule: "{{ var.schedule | default('') }}"
+      schedule_name: "{{ var.schedule_name | default('') }}"
+      pattern: "{{ var.pattern | default('') }}"
+      duration: "{{ var.duration | default('') }}"
+      retention: "{{ var.retention | default('') }}"
+
+      # Access Zone parameters
+      zone_name: "{{ var.zone_name | default('') }}"
+      groupnet: "{{ var.groupnet | default('groupnet0') }}"
+      auth_providers: "{{ var.auth_providers | default('') }}"
+
+      # User/Group parameters
+      user_name: "{{ var.user_name | default('') }}"
+      user_id: "{{ var.user_id | default('') }}"
+      group_name: "{{ var.group_name | default('') }}"
+      group_id: "{{ var.group_id | default('') }}"
+      primary_group: "{{ var.primary_group | default('') }}"
+      home_directory: "{{ var.home_directory | default('') }}"
+      shell: "{{ var.shell | default('/bin/bash') }}"
+
+      # SyncIQ parameters
+      policy_name: "{{ var.policy_name | default('') }}"
+      source_root_path: "{{ var.source_root_path | default('') }}"
+      target_host: "{{ var.target_host | default('') }}"
+      target_path: "{{ var.target_path | default('') }}"
+      action: "{{ var.action | default('sync') }}"
+      enabled: "{{ var.enabled | default('true') }}"
+
+      # Generic parameters
+      state: "{{ var.state | default('present') }}"
+      force: "{{ var.force | default('false') }}"

@@ -1,0 +1,59 @@
+name: sonic
+version: 1.0.0
+description: Comprehensive SONiC network switch management module
+
+steps:
+  - name: Execute SONiC command
+    wasm: wasm/sonic.wasm
+    vars:
+      host: "{{ var.host }}"
+      username: "{{ var.username }}"
+      password: "{{ var.password }}"
+      port: "{{ var.port | default(443) }}"
+      use_rest: "{{ var.use_rest | default(true) }}"
+      validate_certs: "{{ var.validate_certs | default(false) }}"
+      command: "{{ var.command }}"
+
+      # VLAN parameters
+      vlan_id: "{{ var.vlan_id | default(0) }}"
+      interface: "{{ var.interface | default('') }}"
+      tagged: "{{ var.tagged | default(false) }}"
+
+      # Interface parameters
+      ip_address: "{{ var.ip_address | default('') }}"
+      prefix_length: "{{ var.prefix_length | default(24) }}"
+      mtu: "{{ var.mtu | default(0) }}"
+      speed: "{{ var.speed | default('') }}"
+      admin_status: "{{ var.admin_status | default('') }}"
+
+      # Port channel parameters
+      portchannel: "{{ var.portchannel | default('') }}"
+
+      # BGP parameters
+      bgp_asn: "{{ var.bgp_asn | default(0) }}"
+      router_id: "{{ var.router_id | default('') }}"
+      neighbor_ip: "{{ var.neighbor_ip | default('') }}"
+      neighbor_asn: "{{ var.neighbor_asn | default(0) }}"
+      network: "{{ var.network | default('') }}"
+
+      # ACL parameters
+      table_name: "{{ var.table_name | default('') }}"
+      table_type: "{{ var.table_type | default('L3') }}"
+      stage: "{{ var.stage | default('INGRESS') }}"
+      rule_name: "{{ var.rule_name | default('') }}"
+      priority: "{{ var.priority | default(100) }}"
+      action: "{{ var.action | default('FORWARD') }}"
+      src_ip: "{{ var.src_ip | default('') }}"
+      dst_ip: "{{ var.dst_ip | default('') }}"
+      protocol: "{{ var.protocol | default('') }}"
+      src_port: "{{ var.src_port | default(0) }}"
+      dst_port: "{{ var.dst_port | default(0) }}"
+
+      # Route parameters
+      prefix: "{{ var.prefix | default('') }}"
+      nexthop: "{{ var.nexthop | default('') }}"
+
+      # System parameters
+      hostname: "{{ var.hostname | default('') }}"
+      ntp_server: "{{ var.ntp_server | default('') }}"
+      remove: "{{ var.remove | default(false) }}"
