@@ -22,10 +22,19 @@ build-cli:
 	@echo "✓ Built: bin/froyo"
 
 build-runner:
-	@echo "Building froyo-runner (static Linux binary)..."
+	@echo "Building froyo-runner for multiple platforms..."
 	@mkdir -p bin
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/froyo-runner ./cmd/froyo-runner
-	@echo "✓ Built: bin/froyo-runner (Linux amd64)"
+	@echo "  → Linux amd64..."
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/froyo-runner-linux-amd64 ./cmd/froyo-runner
+	@echo "  → Linux arm64..."
+	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bin/froyo-runner-linux-arm64 ./cmd/froyo-runner
+	@echo "  → macOS amd64..."
+	@CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o bin/froyo-runner-darwin-amd64 ./cmd/froyo-runner
+	@echo "  → macOS arm64..."
+	@CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o bin/froyo-runner-darwin-arm64 ./cmd/froyo-runner
+	@echo "  → Windows amd64..."
+	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o bin/froyo-runner-windows-amd64.exe ./cmd/froyo-runner
+	@echo "✓ Built froyo-runner for 5 platforms"
 
 build-wasm:
 	@echo "Building WASM modules..."

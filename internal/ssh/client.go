@@ -90,6 +90,29 @@ func (c *Client) Close() error {
 
 // EnsureRunner ensures the froyo-runner binary exists on the remote host
 func (c *Client) EnsureRunner(localRunnerPath string) error {
+	// Detect remote host OS and architecture
+	goos, goarch, err := c.detectRemoteSystem()
+	if err != nil {
+		return fmt.Errorf("failed to detect remote system: %w", err)
+	}
+
+	// Determine the correct binary name based on OS/arch
+	var binaryName string
+	if goos == "windows" {
+		binaryName = fmt.Sprintf("froyo-runner-%s-%s.exe", goos, goarch)
+	} else {
+		binaryName = fmt.Sprintf("froyo-runner-%s-%s", goos, goarch)
+	}
+
+	// Construct path to platform-specific binary
+	localBinDir := filepath.Dir(localRunnerPath)
+	platformBinary := filepath.Join(localBinDir, binaryName)
+
+	// Check if we have this binary
+	if _, err := os.Stat(platformBinary); os.IsNotExist(err) {
+		return fmt.Errorf("froyo-runner binary not found for %s/%s: %s\nPlease run 'make build-runner' to build all platform binaries", goos, goarch, platformBinary)
+	}
+
 	remoteRunnerPath := filepath.Join(c.runnerDir, "froyo-runner")
 
 	// Create directory
@@ -99,27 +122,69 @@ func (c *Client) EnsureRunner(localRunnerPath string) error {
 
 	// For development: always upload the latest runner
 	// TODO: Add version checking or hash comparison for production
-	// checkCmd := fmt.Sprintf("test -f %s && echo exists || echo missing", remoteRunnerPath)
-	// output, err := c.runCommandOutput(checkCmd)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to check for runner: %w", err)
-	// }
-	//
-	// if strings.TrimSpace(output) == "exists" {
-	// 	return nil // Runner already exists
-	// }
 
-	// Upload runner
-	if err := c.uploadFile(localRunnerPath, remoteRunnerPath); err != nil {
+	// Upload the correct platform-specific runner
+	if err := c.uploadFile(platformBinary, remoteRunnerPath); err != nil {
 		return fmt.Errorf("failed to upload runner: %w", err)
 	}
 
-	// Make executable
-	if err := c.runCommand(fmt.Sprintf("chmod +x %s", remoteRunnerPath)); err != nil {
-		return fmt.Errorf("failed to make runner executable: %w", err)
+	// Make executable (Unix-like systems)
+	if goos != "windows" {
+		if err := c.runCommand(fmt.Sprintf("chmod +x %s", remoteRunnerPath)); err != nil {
+			return fmt.Errorf("failed to make runner executable: %w", err)
+		}
 	}
 
 	return nil
+}
+
+// detectRemoteSystem detects the OS and architecture of the remote host
+func (c *Client) detectRemoteSystem() (goos, goarch string, err error) {
+	// Detect OS
+	osOutput, err := c.runCommandOutput("uname -s")
+	if err != nil {
+		// Try Windows detection
+		winOutput, winErr := c.runCommandOutput("echo %OS%")
+		if winErr == nil && strings.Contains(strings.ToLower(winOutput), "windows") {
+			goos = "windows"
+		} else {
+			return "", "", fmt.Errorf("failed to detect OS: %w", err)
+		}
+	} else {
+		osOutput = strings.TrimSpace(strings.ToLower(osOutput))
+		switch {
+		case strings.Contains(osOutput, "linux"):
+			goos = "linux"
+		case strings.Contains(osOutput, "darwin"):
+			goos = "darwin"
+		case strings.Contains(osOutput, "freebsd"):
+			goos = "freebsd"
+		default:
+			return "", "", fmt.Errorf("unsupported OS: %s", osOutput)
+		}
+	}
+
+	// Detect architecture
+	archOutput, err := c.runCommandOutput("uname -m")
+	if err != nil {
+		return "", "", fmt.Errorf("failed to detect architecture: %w", err)
+	}
+
+	archOutput = strings.TrimSpace(strings.ToLower(archOutput))
+	switch archOutput {
+	case "x86_64", "amd64":
+		goarch = "amd64"
+	case "aarch64", "arm64":
+		goarch = "arm64"
+	case "armv7l", "armv6l":
+		goarch = "arm"
+	case "i386", "i686":
+		goarch = "386"
+	default:
+		return "", "", fmt.Errorf("unsupported architecture: %s", archOutput)
+	}
+
+	return goos, goarch, nil
 }
 
 // ExecuteModule executes a WASM module on the remote host

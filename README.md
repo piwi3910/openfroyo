@@ -57,7 +57,16 @@ This will:
 
 All built binaries are placed in the `bin/` directory:
 - `bin/froyo` - CLI tool (6.8MB)
-- `bin/froyo-runner` - WASM runner (5.0MB)
+- `bin/froyo-runner-{os}-{arch}` - Platform-specific WASM runners (~5MB each)
+
+**Supported Platforms:**
+- `linux-amd64` - Linux x86_64 (most servers)
+- `linux-arm64` - Linux ARM64 (Raspberry Pi, ARM servers)
+- `darwin-amd64` - macOS Intel
+- `darwin-arm64` - macOS Apple Silicon
+- `windows-amd64` - Windows x64
+
+**Auto-Detection:** OpenFroyo automatically detects the remote host's OS and architecture, then uploads the correct binary. No manual selection needed!
 
 The `bin/` directory is git-ignored to keep the repository clean.
 
