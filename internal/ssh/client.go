@@ -80,6 +80,31 @@ func NewClient(host parser.Host) (*Client, error) {
 	}, nil
 }
 
+// NewSimpleClient creates a basic SSH client with host, port, user, and password
+func NewSimpleClient(host string, port int, user, password string) (*ssh.Client, error) {
+	config := &ssh.ClientConfig{
+		User:            user,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	config.Auth = append(config.Auth, ssh.Password(password))
+	config.Auth = append(config.Auth, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+		answers := make([]string, len(questions))
+		for i := range answers {
+			answers[i] = password
+		}
+		return answers, nil
+	}))
+
+	addr := fmt.Sprintf("%s:%d", host, port)
+	client, err := ssh.Dial("tcp", addr, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
+	}
+
+	return client, nil
+}
+
 // Close closes the SSH connection
 func (c *Client) Close() error {
 	if c.client != nil {

@@ -1,0 +1,18 @@
+name: Package Management Test Stack
+description: Test universal package management module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+defaults:
+  update_cache: true
+
+run:
+  - name: Install htop package
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: htop
+      state: present
+      update_cache: true

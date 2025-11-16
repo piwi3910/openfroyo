@@ -1,0 +1,11 @@
+name: package
+version: 1.0.0
+description: Universal package management across Linux, macOS, and Windows
+
+steps:
+  - name: Manage package
+    wasm: wasm/package.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      update_cache: "{{ var.update_cache | default(false) }}"

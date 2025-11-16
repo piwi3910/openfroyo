@@ -142,40 +142,248 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 	// Check if the module wants us to execute a command
 	if execCmdInterface, exists := output.Facts["exec_command"]; exists {
 		if execCmd, ok := execCmdInterface.(string); ok && execCmd != "" {
-			// Execute the command on the host with cross-platform support
-			var cmd *exec.Cmd
+			output = executeCommand(output, execCmd)
+		}
+	}
 
-			// Platform-specific command execution
-			if os.Getenv("OS") != "" && strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
-				// Windows: use cmd.exe /c for command execution
-				cmd = exec.Command("cmd.exe", "/c", execCmd)
-			} else {
-				// Unix-like (Linux, macOS, FreeBSD): parse and execute directly
-				parts := strings.Fields(execCmd)
-				if len(parts) > 0 {
-					cmd = exec.Command(parts[0], parts[1:]...)
-				}
-			}
-
-			if cmd != nil {
-				cmdOutput, cmdErr := cmd.CombinedOutput()
-
-				if cmdErr != nil {
-					output.Status = "failed"
-					output.Message = fmt.Sprintf("Command failed: %v", cmdErr)
-					output.Facts["stdout"] = string(cmdOutput)
-					output.Facts["error"] = cmdErr.Error()
-				} else {
-					output.Status = "ok"
-					output.Message = fmt.Sprintf("Command executed successfully: %s", execCmd)
-					output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
-				}
-				delete(output.Facts, "exec_command") // Remove the internal directive
-			}
+	// Check if the module wants us to manage packages
+	if pkgCmdInterface, exists := output.Facts["package_command"]; exists {
+		if pkgCmd, ok := pkgCmdInterface.(string); ok && pkgCmd != "" {
+			output = executePackageCommand(output, pkgCmd)
 		}
 	}
 
 	return output
+}
+
+func executeCommand(output TaskOutput, execCmd string) TaskOutput {
+	var cmd *exec.Cmd
+
+	// Platform-specific command execution
+	if os.Getenv("OS") != "" && strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
+		// Windows: use cmd.exe /c for command execution
+		cmd = exec.Command("cmd.exe", "/c", execCmd)
+	} else {
+		// Unix-like (Linux, macOS, FreeBSD): parse and execute directly
+		parts := strings.Fields(execCmd)
+		if len(parts) > 0 {
+			cmd = exec.Command(parts[0], parts[1:]...)
+		}
+	}
+
+	if cmd != nil {
+		cmdOutput, cmdErr := cmd.CombinedOutput()
+
+		if cmdErr != nil {
+			output.Status = "failed"
+			output.Message = fmt.Sprintf("Command failed: %v", cmdErr)
+			output.Facts["stdout"] = string(cmdOutput)
+			output.Facts["error"] = cmdErr.Error()
+		} else {
+			output.Status = "ok"
+			output.Message = fmt.Sprintf("Command executed successfully: %s", execCmd)
+			output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
+		}
+		delete(output.Facts, "exec_command")
+	}
+
+	return output
+}
+
+func executePackageCommand(output TaskOutput, pkgCmd string) TaskOutput {
+	commands := strings.Split(pkgCmd, ";")
+
+	var packageManager string
+	var packageName string
+	var results []string
+
+	for _, cmdDirective := range commands {
+		cmdDirective = strings.TrimSpace(cmdDirective)
+
+		if cmdDirective == "detect_pkg_mgr" {
+			// Detect available package manager
+			pkgMgr := detectPackageManager()
+			if pkgMgr == "" {
+				output.Status = "failed"
+				output.Message = "No supported package manager found"
+				delete(output.Facts, "package_command")
+				return output
+			}
+			packageManager = pkgMgr
+			results = append(results, fmt.Sprintf("Detected package manager: %s", pkgMgr))
+			continue
+		}
+
+		if cmdDirective == "update_cache" {
+			// Update package cache
+			updateCmd := getUpdateCacheCommand(packageManager)
+			if updateCmd != "" {
+				cmd := exec.Command("sh", "-c", updateCmd)
+				cmdOutput, _ := cmd.CombinedOutput()
+				results = append(results, fmt.Sprintf("Updated package cache: %s", strings.TrimSpace(string(cmdOutput))))
+			}
+			continue
+		}
+
+		// Handle install/remove/upgrade commands
+		if strings.HasPrefix(cmdDirective, "install:") {
+			packageName = strings.TrimPrefix(cmdDirective, "install:")
+			installCmd := getInstallCommand(packageManager, packageName)
+			cmd := exec.Command("sh", "-c", installCmd)
+			cmdOutput, cmdErr := cmd.CombinedOutput()
+
+			if cmdErr != nil {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Failed to install %s: %v", packageName, cmdErr)
+				output.Facts["error"] = cmdErr.Error()
+			} else {
+				output.Status = "ok"
+				output.Message = fmt.Sprintf("Package %s installed successfully", packageName)
+				results = append(results, string(cmdOutput))
+			}
+		} else if strings.HasPrefix(cmdDirective, "remove:") {
+			packageName = strings.TrimPrefix(cmdDirective, "remove:")
+			removeCmd := getRemoveCommand(packageManager, packageName)
+			cmd := exec.Command("sh", "-c", removeCmd)
+			cmdOutput, cmdErr := cmd.CombinedOutput()
+
+			if cmdErr != nil {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Failed to remove %s: %v", packageName, cmdErr)
+				output.Facts["error"] = cmdErr.Error()
+			} else {
+				output.Status = "ok"
+				output.Message = fmt.Sprintf("Package %s removed successfully", packageName)
+				results = append(results, string(cmdOutput))
+			}
+		} else if strings.HasPrefix(cmdDirective, "upgrade:") {
+			packageName = strings.TrimPrefix(cmdDirective, "upgrade:")
+			upgradeCmd := getUpgradeCommand(packageManager, packageName)
+			cmd := exec.Command("sh", "-c", upgradeCmd)
+			cmdOutput, cmdErr := cmd.CombinedOutput()
+
+			if cmdErr != nil {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Failed to upgrade %s: %v", packageName, cmdErr)
+				output.Facts["error"] = cmdErr.Error()
+			} else {
+				output.Status = "ok"
+				output.Message = fmt.Sprintf("Package %s upgraded successfully", packageName)
+				results = append(results, string(cmdOutput))
+			}
+		}
+	}
+
+	output.Facts["package_manager"] = packageManager
+	output.Facts["package_name"] = packageName
+	output.Facts["stdout"] = strings.Join(results, "\n")
+	delete(output.Facts, "package_command")
+
+	return output
+}
+
+func detectPackageManager() string {
+	managers := []struct {
+		name  string
+		check string
+	}{
+		{"apt", "which apt-get"},
+		{"dnf", "which dnf"},
+		{"yum", "which yum"},
+		{"pacman", "which pacman"},
+		{"brew", "which brew"},
+		{"choco", "where choco"},
+		{"winget", "where winget"},
+	}
+
+	for _, mgr := range managers {
+		cmd := exec.Command("sh", "-c", mgr.check)
+		if err := cmd.Run(); err == nil {
+			return mgr.name
+		}
+	}
+
+	return ""
+}
+
+func getUpdateCacheCommand(pkgMgr string) string {
+	switch pkgMgr {
+	case "apt":
+		return "sudo apt-get update"
+	case "dnf":
+		return "sudo dnf check-update || true"
+	case "yum":
+		return "sudo yum check-update || true"
+	case "pacman":
+		return "sudo pacman -Sy"
+	case "brew":
+		return "brew update"
+	default:
+		return ""
+	}
+}
+
+func getInstallCommand(pkgMgr, packageName string) string {
+	switch pkgMgr {
+	case "apt":
+		return fmt.Sprintf("sudo apt-get install -y %s", packageName)
+	case "dnf":
+		return fmt.Sprintf("sudo dnf install -y %s", packageName)
+	case "yum":
+		return fmt.Sprintf("sudo yum install -y %s", packageName)
+	case "pacman":
+		return fmt.Sprintf("sudo pacman -S --noconfirm %s", packageName)
+	case "brew":
+		return fmt.Sprintf("brew install %s", packageName)
+	case "choco":
+		return fmt.Sprintf("choco install -y %s", packageName)
+	case "winget":
+		return fmt.Sprintf("winget install --silent %s", packageName)
+	default:
+		return ""
+	}
+}
+
+func getRemoveCommand(pkgMgr, packageName string) string {
+	switch pkgMgr {
+	case "apt":
+		return fmt.Sprintf("sudo apt-get remove -y %s", packageName)
+	case "dnf":
+		return fmt.Sprintf("sudo dnf remove -y %s", packageName)
+	case "yum":
+		return fmt.Sprintf("sudo yum remove -y %s", packageName)
+	case "pacman":
+		return fmt.Sprintf("sudo pacman -R --noconfirm %s", packageName)
+	case "brew":
+		return fmt.Sprintf("brew uninstall %s", packageName)
+	case "choco":
+		return fmt.Sprintf("choco uninstall -y %s", packageName)
+	case "winget":
+		return fmt.Sprintf("winget uninstall --silent %s", packageName)
+	default:
+		return ""
+	}
+}
+
+func getUpgradeCommand(pkgMgr, packageName string) string {
+	switch pkgMgr {
+	case "apt":
+		return fmt.Sprintf("sudo apt-get install --only-upgrade -y %s", packageName)
+	case "dnf":
+		return fmt.Sprintf("sudo dnf upgrade -y %s", packageName)
+	case "yum":
+		return fmt.Sprintf("sudo yum upgrade -y %s", packageName)
+	case "pacman":
+		return fmt.Sprintf("sudo pacman -S --noconfirm %s", packageName)
+	case "brew":
+		return fmt.Sprintf("brew upgrade %s", packageName)
+	case "choco":
+		return fmt.Sprintf("choco upgrade -y %s", packageName)
+	case "winget":
+		return fmt.Sprintf("winget upgrade --silent %s", packageName)
+	default:
+		return ""
+	}
 }
 
 func printOutput(output TaskOutput) {

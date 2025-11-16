@@ -1,33 +1,74 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/piwi3910/openfroyo/internal/executor"
+	"github.com/piwi3910/openfroyo/internal/onboard"
 	"github.com/piwi3910/openfroyo/internal/parser"
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: froyo apply <stack.ofy.yml>")
+	if len(os.Args) < 2 {
+		printUsage()
 		os.Exit(1)
 	}
 
 	command := os.Args[1]
-	if command != "apply" {
+
+	switch command {
+	case "apply":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: froyo apply <stack.ofy>")
+			os.Exit(1)
+		}
+		stackPath := os.Args[2]
+		if err := runApply(stackPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "onboard":
+		if err := runOnboard(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+	default:
 		fmt.Printf("Unknown command: %s\n", command)
-		fmt.Println("Available commands: apply")
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  froyo apply <stack.ofy>                    - Execute a stack")
+	fmt.Println("  froyo onboard --host <ip> --user <user> --password <pass> [--port <port>] [--inventory <file>]")
+	fmt.Println("                                             - Set up openfroyo user on remote host")
+}
+
+func runOnboard(args []string) error {
+	fs := flag.NewFlagSet("onboard", flag.ExitOnError)
+	host := fs.String("host", "", "Remote host IP or hostname")
+	user := fs.String("user", "", "SSH username")
+	password := fs.String("password", "", "SSH password")
+	port := fs.Int("port", 22, "SSH port (default: 22)")
+	inventory := fs.String("inventory", "", "Inventory file to update (optional)")
+
+	fs.Parse(args)
+
+	if *host == "" || *user == "" || *password == "" {
+		fmt.Println("Error: --host, --user, and --password are required")
+		fmt.Println("\nUsage: froyo onboard --host <ip> --user <user> --password <pass> [--port <port>] [--inventory <file>]")
 		os.Exit(1)
 	}
 
-	stackPath := os.Args[2]
-
-	if err := runApply(stackPath); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	fmt.Printf("DEBUG: host=%s port=%d user=%s password_len=%d\n", *host, *port, *user, len(*password))
+	return onboard.OnboardHost(*host, *port, *user, *password, *inventory)
 }
 
 func runApply(stackPath string) error {
