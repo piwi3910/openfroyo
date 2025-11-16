@@ -67,7 +67,6 @@ func runOnboard(args []string) error {
 		os.Exit(1)
 	}
 
-	fmt.Printf("DEBUG: host=%s port=%d user=%s password_len=%d\n", *host, *port, *user, len(*password))
 	return onboard.OnboardHost(*host, *port, *user, *password, *inventory)
 }
 

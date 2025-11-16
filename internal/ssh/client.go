@@ -42,8 +42,6 @@ type TaskOutput struct {
 
 // NewClient creates a new SSH client
 func NewClient(host parser.Host) (*Client, error) {
-	fmt.Printf("DEBUG NewClient: Creating SSH config for %s@%s:%d\n", host.SSHUser, host.SSHHost, host.SSHPort)
-
 	config := &ssh.ClientConfig{
 		User:            host.SSHUser,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // For MVP - should validate in production
@@ -51,7 +49,6 @@ func NewClient(host parser.Host) (*Client, error) {
 
 	// Add authentication method
 	if host.SSHKeyFile != "" {
-		fmt.Println("DEBUG NewClient: Using SSH key file authentication")
 		key, err := os.ReadFile(host.SSHKeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read SSH key: %w", err)
@@ -64,8 +61,6 @@ func NewClient(host parser.Host) (*Client, error) {
 
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	} else if host.SSHPassword != "" {
-		fmt.Println("DEBUG NewClient: Using password authentication")
-		fmt.Printf("DEBUG NewClient: Password bytes: %v\n", []byte(host.SSHPassword))
 		config.Auth = append(config.Auth, ssh.Password(host.SSHPassword))
 	} else {
 		return nil, fmt.Errorf("no authentication method specified (password or key file required)")
@@ -73,14 +68,11 @@ func NewClient(host parser.Host) (*Client, error) {
 
 	// Connect
 	addr := fmt.Sprintf("%s:%d", host.SSHHost, host.SSHPort)
-	fmt.Printf("DEBUG NewClient: Attempting to dial %s\n", addr)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		fmt.Printf("DEBUG NewClient: Dial failed: %v\n", err)
 		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
 	}
 
-	fmt.Println("DEBUG NewClient: Connection successful!")
 	return &Client{
 		host:      host,
 		client:    client,
@@ -90,22 +82,13 @@ func NewClient(host parser.Host) (*Client, error) {
 
 // NewSimpleClient creates a basic SSH client with host, port, user, and password
 func NewSimpleClient(host string, port int, user, password string) (*ssh.Client, error) {
-	fmt.Printf("DEBUG NewSimpleClient: Creating SSH config for %s@%s:%d\n", user, host, port)
-	fmt.Printf("DEBUG NewSimpleClient: Password bytes: %v\n", []byte(password))
-
 	config := &ssh.ClientConfig{
 		User:            user,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	// Password auth
-	fmt.Println("DEBUG NewSimpleClient: Adding Password auth method")
 	config.Auth = append(config.Auth, ssh.Password(password))
-
-	// Keyboard-interactive auth
-	fmt.Println("DEBUG NewSimpleClient: Adding KeyboardInteractive auth method")
 	config.Auth = append(config.Auth, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
-		fmt.Printf("DEBUG KeyboardInteractive: user=%s instruction=%s questions=%v\n", user, instruction, questions)
 		answers := make([]string, len(questions))
 		for i := range answers {
 			answers[i] = password
@@ -114,14 +97,11 @@ func NewSimpleClient(host string, port int, user, password string) (*ssh.Client,
 	}))
 
 	addr := fmt.Sprintf("%s:%d", host, port)
-	fmt.Printf("DEBUG NewSimpleClient: Attempting to dial %s\n", addr)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		fmt.Printf("DEBUG NewSimpleClient: Dial failed: %v\n", err)
 		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
 	}
 
-	fmt.Println("DEBUG NewSimpleClient: Connection successful!")
 	return client, nil
 }
 
@@ -301,11 +281,8 @@ func (c *Client) runCommandOutput(cmd string) (string, error) {
 
 // uploadFile uploads a local file to the remote host using native scp command
 func (c *Client) uploadFile(localPath, remotePath string) error {
-	fmt.Printf("DEBUG uploadFile: Uploading %s to %s\n", localPath, remotePath)
-
 	// Create remote directory if needed
 	remoteDir := filepath.Dir(remotePath)
-	fmt.Printf("DEBUG uploadFile: Creating remote directory %s\n", remoteDir)
 	if err := c.runCommand(fmt.Sprintf("mkdir -p %s", remoteDir)); err != nil {
 		return fmt.Errorf("failed to create remote directory: %w", err)
 	}
@@ -332,13 +309,10 @@ func (c *Client) uploadFile(localPath, remotePath string) error {
 	// Add source and destination
 	scpCmd = append(scpCmd, localPath, fmt.Sprintf("%s:%s", addr, remotePath))
 
-	fmt.Printf("DEBUG uploadFile: Running: %v\n", scpCmd)
-
 	// Execute scp command
 	cmd := exec.Command(scpCmd[0], scpCmd[1:]...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("DEBUG uploadFile: SCP failed: %v, output: %s\n", err, string(output))
 		return fmt.Errorf("scp failed: %w, output: %s", err, string(output))
 	}
 
@@ -347,6 +321,5 @@ func (c *Client) uploadFile(localPath, remotePath string) error {
 		return fmt.Errorf("failed to chmod: %w", err)
 	}
 
-	fmt.Println("DEBUG uploadFile: Upload successful")
 	return nil
 }

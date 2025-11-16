@@ -116,28 +116,22 @@ func checkSudoAccess(client *ssh.Client, password string) (isRoot bool, canSudo 
 	// Check if running as root
 	output, err := runCommand(client, "id -u")
 	if err != nil {
-		fmt.Printf("DEBUG checkSudoAccess: id -u failed: %v\n", err)
 		return false, false, err
 	}
 
-	fmt.Printf("DEBUG checkSudoAccess: id -u output: '%s'\n", output)
 	if strings.TrimSpace(output) == "0" {
 		return true, true, nil
 	}
 
 	// Check if can sudo with password
 	cmd := fmt.Sprintf("echo '%s' | sudo -S whoami 2>&1", password)
-	fmt.Printf("DEBUG checkSudoAccess: Running sudo test command\n")
 	output, err = runCommand(client, cmd)
-	fmt.Printf("DEBUG checkSudoAccess: sudo whoami output: '%s', err: %v\n", output, err)
 
 	// Check if output contains "root" even if there are warnings
 	if strings.Contains(output, "root") {
-		fmt.Println("DEBUG checkSudoAccess: Found 'root' in output, sudo works")
 		return false, true, nil
 	}
 
-	fmt.Println("DEBUG checkSudoAccess: No sudo access detected")
 	return false, false, nil
 }
 
