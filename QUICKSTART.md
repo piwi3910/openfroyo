@@ -43,7 +43,7 @@ You should now have:
 
 ### 2. Configure Your Inventory
 
-Edit `examples/inventory/hosts.ofy.yml` with your SSH host details:
+Edit `examples/inventory/hosts.yml` with your SSH host details:
 
 ```yaml
 hosts:
@@ -59,12 +59,12 @@ hosts:
 ### 3. Run Your First Stack
 
 ```bash
-./bin/froyo apply examples/stacks/test.ofy.yml
+./bin/froyo apply examples/stacks/test.ofy
 ```
 
 **Expected output:**
 ```
-Loading stack: examples/stacks/test.ofy.yml
+Loading stack: examples/stacks/test.ofy
 Loading inventory...
 Loaded 1 hosts, 0 groups
 
@@ -80,7 +80,7 @@ Stack execution completed successfully!
 
 ## What Just Happened?
 
-1. **Parsed the stack** - Loaded `test.ofy.yml` configuration
+1. **Parsed the stack** - Loaded `test.ofy` configuration
 2. **Connected via SSH** - Connected to your host using SSH
 3. **Deployed froyo-runner** - Transferred the runner binary to `/tmp/froyo/`
 4. **Uploaded WASM module** - Transferred `exec.wasm` to the host
@@ -91,12 +91,12 @@ Stack execution completed successfully!
 
 ### Create Your Own Stack
 
-Create `my-stack.ofy.yml`:
+Create `my-stack.ofy`:
 
 ```yaml
 name: My First Stack
 inventory:
-  - examples/inventory/hosts.ofy.yml
+  - examples/inventory/hosts.yml
 
 run:
   - name: Get system info
@@ -116,7 +116,7 @@ run:
 
 Run it:
 ```bash
-./bin/froyo apply my-stack.ofy.yml
+./bin/froyo apply my-stack.ofy
 ```
 
 ### Working with Multiple Hosts

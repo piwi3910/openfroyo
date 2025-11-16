@@ -29,7 +29,7 @@ make build-wasm
 
 ### Configure
 
-Edit `examples/inventory/hosts.ofy.yml` with your SSH host details:
+Edit `examples/inventory/hosts.yml` with your SSH host details:
 
 ```yaml
 hosts:
@@ -43,7 +43,7 @@ hosts:
 ### Run
 
 ```bash
-./bin/froyo apply examples/stacks/test.ofy.yml
+./bin/froyo apply examples/stacks/test.ofy
 ```
 
 This will:

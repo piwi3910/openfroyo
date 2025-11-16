@@ -1,6 +1,6 @@
 name: Test Stack
 inventory:
-  - examples/inventory/hosts.ofy.yml
+  - examples/inventory/hosts.yml
 
 defaults:
   cmd: /usr/bin/uname -r

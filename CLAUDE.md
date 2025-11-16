@@ -22,10 +22,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 openfroyo-project/
   inventory/
-    hosts.ofy.yml      # SSH connection details for hosts
-    groups.ofy.yml     # Host group definitions
+    hosts.yml          # SSH connection details for hosts
+    groups.yml         # Host group definitions
   stacks/
-    *.ofy.yml          # Orchestration definitions (what to run, where, in what order)
+    *.ofy              # Orchestration definitions (what to run, where, in what order)
   modules/
     <name>/
       module.ofy.yml   # Module definition with steps
@@ -81,14 +81,14 @@ openfroyo-project/
 
 ```bash
 # Run a stack
-froyo apply stacks/web_stack.ofy.yml
+froyo apply stacks/web_stack.ofy
 
 # Dry run (plan mode)
-froyo plan stacks/web_stack.ofy.yml
+froyo plan stacks/web_stack.ofy
 
 # Partial execution
-froyo apply stacks/web_stack.ofy.yml --until "Database layer"
-froyo apply stacks/web_stack.ofy.yml --from "Deploy app code"
+froyo apply stacks/web_stack.ofy --until "Database layer"
+froyo apply stacks/web_stack.ofy --from "Deploy app code"
 ```
 
 ## Development Commands
@@ -139,11 +139,11 @@ golangci-lint run
 
 ## File Formats
 
-All OpenFroyo configuration files use `.ofy.yml` extension:
-- **Stack files** (`stacks/*.ofy.yml`): Define orchestration
-- **Module files** (`modules/*/module.ofy.yml`): Define reusable automation units
-- **Inventory files** (`inventory/*.ofy.yml`): Define hosts and groups
-- **Variable files** (`defaults.ofy.yml`, `vars.ofy.yml`): Define variables
+OpenFroyo uses different file extensions for different purposes:
+- **Stack files** (`stacks/*.ofy`): Orchestration definitions (OpenFroyo-specific)
+- **Inventory files** (`inventory/*.yml`): Host and group definitions (standard YAML)
+- **Module files** (`modules/*/module.ofy.yml`): Module definitions (OpenFroyo-specific)
+- **Variable files** (`defaults.ofy.yml`, `vars.ofy.yml`): Variable definitions
 
 ## Execution Behaviors
 

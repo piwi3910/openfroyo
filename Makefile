@@ -10,8 +10,8 @@ help:
 	@echo "Quick start:"
 	@echo "  1. make build"
 	@echo "  2. make build-wasm"
-	@echo "  3. Edit examples/inventory/hosts.ofy.yml with your SSH host"
-	@echo "  4. ./bin/froyo apply examples/stacks/test.ofy.yml"
+	@echo "  3. Edit examples/inventory/hosts.yml with your SSH host"
+	@echo "  4. ./bin/froyo apply examples/stacks/test.ofy"
 
 build: build-runner build-cli
 
