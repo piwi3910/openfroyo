@@ -1,0 +1,14 @@
+name: Test Stack
+inventory:
+  - examples/inventory/hosts.ofy.yml
+
+defaults:
+  cmd: uname -r
+
+run:
+  - name: Check kernel version
+    module: exec
+    hosts:
+      - test-host
+    vars:
+      cmd: uname -r
