@@ -48,16 +48,17 @@ func runApply(stackPath string) error {
 	fmt.Printf("Loaded %d hosts, %d groups\n\n", len(inventory.Hosts), len(inventory.Groups))
 
 	// Find froyo-runner binary
-	runnerPath := "./froyo-runner"
+	// Try bin/froyo-runner first (when running from project root)
+	runnerPath := "bin/froyo-runner"
 	if _, err := os.Stat(runnerPath); os.IsNotExist(err) {
-		// Try in same directory as froyo
+		// Try in same directory as froyo executable
 		exePath, err := os.Executable()
 		if err != nil {
 			return fmt.Errorf("failed to locate froyo-runner binary")
 		}
 		runnerPath = filepath.Join(filepath.Dir(exePath), "froyo-runner")
 		if _, err := os.Stat(runnerPath); os.IsNotExist(err) {
-			return fmt.Errorf("froyo-runner binary not found (expected at %s)", runnerPath)
+			return fmt.Errorf("froyo-runner binary not found (expected at bin/froyo-runner or %s)", runnerPath)
 		}
 	}
 

@@ -1,6 +1,5 @@
-# Binaries
-froyo
-froyo-runner
+# Build output directory
+bin/
 
 # WASM modules
 *.wasm

@@ -37,9 +37,9 @@ make build-wasm
 ```
 
 You should now have:
-- `./froyo` - The CLI tool
-- `./froyo-runner` - The runner binary (deployed to remote hosts)
-- `./modules/exec/wasm/exec.wasm` - The exec module
+- `bin/froyo` - The CLI tool (6.8MB)
+- `bin/froyo-runner` - The runner binary (5.0MB, deployed to remote hosts)
+- `modules/exec/wasm/exec.wasm` - The exec module (518KB)
 
 ### 2. Configure Your Inventory
 
@@ -59,7 +59,7 @@ hosts:
 ### 3. Run Your First Stack
 
 ```bash
-./froyo apply examples/stacks/test.ofy.yml
+./bin/froyo apply examples/stacks/test.ofy.yml
 ```
 
 **Expected output:**
@@ -116,7 +116,7 @@ run:
 
 Run it:
 ```bash
-./froyo apply my-stack.ofy.yml
+./bin/froyo apply my-stack.ofy.yml
 ```
 
 ### Working with Multiple Hosts

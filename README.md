@@ -43,7 +43,7 @@ hosts:
 ### Run
 
 ```bash
-./froyo apply examples/stacks/test.ofy.yml
+./bin/froyo apply examples/stacks/test.ofy.yml
 ```
 
 This will:
@@ -52,6 +52,14 @@ This will:
 3. Upload the WASM module
 4. Execute `uname -r` on the remote host
 5. Return and display the kernel version
+
+### Binaries Location
+
+All built binaries are placed in the `bin/` directory:
+- `bin/froyo` - CLI tool (6.8MB)
+- `bin/froyo-runner` - WASM runner (5.0MB)
+
+The `bin/` directory is git-ignored to keep the repository clean.
 
 ## Project Structure
 
