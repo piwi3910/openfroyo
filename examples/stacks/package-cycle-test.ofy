@@ -1,0 +1,30 @@
+name: Package Management Cycle Test
+description: Test install, remove, and reinstall package
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Remove htop if installed
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: htop
+      state: absent
+
+  - name: Install htop
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: htop
+      state: present
+      update_cache: true
+
+  - name: Verify htop is installed
+    module: generic/exec
+    hosts:
+      - test-host
+    vars:
+      cmd: which htop
