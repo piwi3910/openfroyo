@@ -1,0 +1,46 @@
+# Example inventory configuration for HP iLO module testing
+# Copy this to your project's inventory/ directory and customize
+
+# inventory/hosts.yml
+hosts:
+  ilo-web01:
+    ansible_host: 10.0.1.100
+    ilo_ip: 10.0.1.100
+
+  ilo-web02:
+    ansible_host: 10.0.1.101
+    ilo_ip: 10.0.1.101
+
+  ilo-db01:
+    ansible_host: 10.0.2.100
+    ilo_ip: 10.0.2.100
+
+  ilo-db02:
+    ansible_host: 10.0.2.101
+    ilo_ip: 10.0.2.101
+
+# inventory/groups.yml
+groups:
+  ilo_servers:
+    hosts:
+      - ilo-web01
+      - ilo-web02
+      - ilo-db01
+      - ilo-db02
+
+  ilo_web_servers:
+    hosts:
+      - ilo-web01
+      - ilo-web02
+
+  ilo_db_servers:
+    hosts:
+      - ilo-db01
+      - ilo-db02
+
+# Variable file example
+# vars/ilo_credentials.yml (encrypted with vault)
+vault:
+  ilo_password: "YourSecurePassword123!"
+  ilo_license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+  monitor_password: "MonitorUserPass456!"

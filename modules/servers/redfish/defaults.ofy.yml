@@ -1,0 +1,8 @@
+# Default Redfish API configuration
+baseuri: "https://192.168.1.100"
+username: "admin"
+password: "password"
+command: "GetSystemInfo"
+timeout: 30
+validate_certs: true
+resource_id: "System.Embedded.1"

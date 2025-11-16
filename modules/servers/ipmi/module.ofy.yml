@@ -1,0 +1,39 @@
+name: ipmi
+version: 1.0.0
+description: IPMI (Intelligent Platform Management Interface) operations for out-of-band server management
+
+steps:
+  - name: Execute IPMI command
+    wasm: wasm/ipmi.wasm
+    vars:
+      bmc_host: "{{ var.bmc_host }}"
+      username: "{{ var.username }}"
+      password: "{{ var.password }}"
+      command: "{{ var.command }}"
+      interface: "{{ var.interface | default('lanplus') }}"
+      privilege: "{{ var.privilege | default('ADMINISTRATOR') }}"
+      # Optional command-specific parameters
+      boot_device: "{{ var.boot_device | default('') }}"
+      persistent: "{{ var.persistent | default(false) }}"
+      sensor_name: "{{ var.sensor_name | default('') }}"
+      user_id: "{{ var.user_id | default(0) }}"
+      user_name: "{{ var.user_name | default('') }}"
+      user_password: "{{ var.user_password | default('') }}"
+      user_privilege: "{{ var.user_privilege | default('') }}"
+      channel: "{{ var.channel | default(1) }}"
+      ip_address: "{{ var.ip_address | default('') }}"
+      subnet_mask: "{{ var.subnet_mask | default('') }}"
+      gateway: "{{ var.gateway | default('') }}"
+      vlan_id: "{{ var.vlan_id | default(0) }}"
+      duration: "{{ var.duration | default(15) }}"
+      filepath: "{{ var.filepath | default('/tmp/sel.log') }}"
+      fru_id: "{{ var.fru_id | default(0) }}"
+      param: "{{ var.param | default('') }}"
+      value: "{{ var.value | default('') }}"
+      sdr_type: "{{ var.sdr_type | default('') }}"
+      entity_id: "{{ var.entity_id | default('') }}"
+      watchdog_action: "{{ var.watchdog_action | default('reset') }}"
+      watchdog_timeout: "{{ var.watchdog_timeout | default(60) }}"
+      raw_command: "{{ var.raw_command | default('') }}"
+      auth_level: "{{ var.auth_level | default('') }}"
+      auth_type: "{{ var.auth_type | default('') }}"

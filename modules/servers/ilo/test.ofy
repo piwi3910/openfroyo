@@ -1,0 +1,316 @@
+name: HP iLO Module Test Stack
+description: Comprehensive test suite for HP iLO operations
+
+inventory:
+  - "@group:ilo_servers"
+
+defaults:
+  ilo_user: "Administrator"
+  ilo_password: "{{ vault.ilo_password }}"
+  validate_certs: false
+  timeout: 120
+
+run:
+  # Power Management Tests
+  - name: "Power Management Tests"
+    strategy: serial
+    tasks:
+      - name: Get current power state
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_power_state"
+
+      - name: Test power button press
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "power_button"
+
+  # System Information Tests
+  - name: "System Information Tests"
+    strategy: parallel
+    max_parallel: 3
+    tasks:
+      - name: Get complete system information
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_system_info"
+
+      - name: Get system health status
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_health_status"
+
+      - name: Get hardware inventory
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_hardware_inventory"
+
+      - name: Get firmware versions
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_firmware_versions"
+
+      - name: Get product information
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_product_info"
+
+      - name: Get serial number
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_serial_number"
+
+  # Virtual Media Tests
+  - name: "Virtual Media Tests"
+    strategy: serial
+    tasks:
+      - name: Get virtual media status
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_virtual_media_status"
+
+      - name: Insert virtual CD (Ubuntu ISO)
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "insert_virtual_cd"
+          iso_url: "http://releases.ubuntu.com/22.04/ubuntu-22.04.3-live-server-amd64.iso"
+
+      - name: Verify virtual media mounted
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_virtual_media_status"
+
+      - name: Eject virtual CD
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "eject_virtual_cd"
+
+  # Boot Configuration Tests
+  - name: "Boot Configuration Tests"
+    strategy: serial
+    tasks:
+      - name: Get current boot configuration
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_boot_config"
+
+      - name: Set one-time boot to HDD
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "set_onetime_boot"
+          boot_device: "Hdd"
+
+      - name: Verify boot configuration
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_boot_config"
+
+  # User Management Tests
+  - name: "User Management Tests"
+    strategy: serial
+    tasks:
+      - name: Get current user list
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_users"
+
+      - name: Create test operator user
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "create_user"
+          new_username: "test_operator"
+          new_password: "TestPass123!"
+          privilege: "Operator"
+
+      - name: Verify user created
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_users"
+
+      - name: Modify test user password
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "modify_user"
+          user_id: "3"
+          new_password: "NewTestPass456!"
+
+      - name: Delete test user
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "delete_user"
+          user_id: "3"
+
+  # Network Configuration Tests
+  - name: "Network Configuration Tests"
+    strategy: serial
+    tasks:
+      - name: Get current network settings
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_network_settings"
+
+      - name: Set iLO hostname
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "set_hostname"
+          hostname: "ilo-test-server"
+
+      - name: Verify hostname change
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_network_settings"
+
+  # Firmware Management Tests
+  - name: "Firmware Management Tests"
+    strategy: serial
+    tasks:
+      - name: Get firmware inventory
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_firmware_inventory"
+
+  # Logs and Events Tests
+  - name: "Logs and Events Tests"
+    strategy: parallel
+    max_parallel: 2
+    tasks:
+      - name: Get Integrated Management Log
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_iml_log"
+
+      - name: Get iLO Event Log
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_ilo_event_log"
+
+  # License Management Tests
+  - name: "License Management Tests"
+    strategy: serial
+    tasks:
+      - name: Get license status
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_license_status"
+
+  # iLO Settings Tests
+  - name: "iLO Settings Tests"
+    strategy: serial
+    tasks:
+      - name: Get iLO information
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_ilo_info"
+
+      - name: Get iLO date/time
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_ilo_datetime"
+
+      - name: Test network connectivity from iLO
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "ping_from_ilo"
+          target_host: "8.8.8.8"
+
+  # Security Tests
+  - name: "Security Tests"
+    strategy: serial
+    tasks:
+      - name: Get security dashboard
+        module: ilo
+        vars:
+          ilo_ip: "{{ ilo_ip }}"
+          ilo_user: "{{ ilo_user }}"
+          ilo_password: "{{ ilo_password }}"
+          command: "get_security_dashboard"

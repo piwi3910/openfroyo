@@ -1,0 +1,266 @@
+# Redfish Module Test Suite
+#
+# This module provides comprehensive Redfish API operations for server management.
+#
+# Usage:
+#   froyo apply modules/servers/redfish/test.ofy
+#
+# IMPORTANT: Update the connection details below with your actual Redfish server
+#
+# Variables:
+#   - baseuri (required): Redfish API base URL (e.g., "https://192.168.1.100")
+#   - username (required): Username for authentication
+#   - password (required): Password for authentication
+#   - command (required): Operation to perform
+#   - timeout (optional, default: 30): Request timeout in seconds
+#   - validate_certs (optional, default: true): Validate SSL certificates
+#   - resource_id (optional, default: "System.Embedded.1"): System resource ID
+#
+# Supported Commands:
+#   Power Management:
+#     - PowerOn, PowerOff, GracefulShutdown, ForceRestart, PowerCycle, Nmi
+#     - GetPowerState
+#
+#   System Inventory:
+#     - GetSystemInfo, GetProcessorInfo, GetMemoryInfo
+#     - GetStorageInfo, GetNetworkInfo
+#
+#   Firmware Management:
+#     - GetFirmwareInventory, UpdateFirmware
+#
+#   BIOS Configuration:
+#     - GetBiosAttributes, SetBiosAttributes, ResetBiosToDefaults
+#
+#   Boot Configuration:
+#     - GetBootConfiguration, SetBootSource, SetBootMode
+
+name: Redfish Module Test Suite
+description: Comprehensive tests for Redfish API server management operations
+
+inventory:
+  - examples/inventory/hosts.yml
+
+defaults:
+  # IMPORTANT: Update these with your actual Redfish server details
+  redfish_baseuri: "https://192.168.1.100"
+  redfish_username: "admin"
+  redfish_password: "password"
+  redfish_validate_certs: false  # Set to true in production with valid certs
+
+run:
+  # ============================================================================
+  # POWER STATE TESTS
+  # ============================================================================
+
+  - name: Get current power state
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetPowerState
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # ============================================================================
+  # SYSTEM INFORMATION TESTS
+  # ============================================================================
+
+  - name: Get system information
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetSystemInfo
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Get processor information
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetProcessorInfo
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Get memory information
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetMemoryInfo
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Get storage information
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetStorageInfo
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Get network interface information
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetNetworkInfo
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # ============================================================================
+  # BIOS CONFIGURATION TESTS
+  # ============================================================================
+
+  - name: Get BIOS attributes
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetBiosAttributes
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Set BIOS attribute (example - adjust for your hardware)
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: SetBiosAttributes
+      validate_certs: "{{ var.redfish_validate_certs }}"
+      attributes:
+        BootMode: "Uefi"
+        QuietBoot: "Enabled"
+
+  # ============================================================================
+  # BOOT CONFIGURATION TESTS
+  # ============================================================================
+
+  - name: Get boot configuration
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetBootConfiguration
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Set boot source to PXE (one-time)
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: SetBootSource
+      boot_source: Pxe
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  - name: Set boot mode to UEFI
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: SetBootMode
+      boot_mode: UEFI
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # ============================================================================
+  # FIRMWARE MANAGEMENT TESTS
+  # ============================================================================
+
+  - name: Get firmware inventory
+    module: servers/redfish
+    hosts:
+      - server-01
+    vars:
+      baseuri: "{{ var.redfish_baseuri }}"
+      username: "{{ var.redfish_username }}"
+      password: "{{ var.redfish_password }}"
+      command: GetFirmwareInventory
+      validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # ============================================================================
+  # POWER MANAGEMENT TESTS (COMMENTED OUT FOR SAFETY)
+  # ============================================================================
+  # Uncomment and use these carefully - they will actually reboot/shutdown servers!
+
+  # - name: Graceful shutdown server
+  #   module: servers/redfish
+  #   hosts:
+  #     - server-01
+  #   vars:
+  #     baseuri: "{{ var.redfish_baseuri }}"
+  #     username: "{{ var.redfish_username }}"
+  #     password: "{{ var.redfish_password }}"
+  #     command: GracefulShutdown
+  #     validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # - name: Power on server
+  #   module: servers/redfish
+  #   hosts:
+  #     - server-01
+  #   vars:
+  #     baseuri: "{{ var.redfish_baseuri }}"
+  #     username: "{{ var.redfish_username }}"
+  #     password: "{{ var.redfish_password }}"
+  #     command: PowerOn
+  #     validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # - name: Force restart server
+  #   module: servers/redfish
+  #   hosts:
+  #     - server-01
+  #   vars:
+  #     baseuri: "{{ var.redfish_baseuri }}"
+  #     username: "{{ var.redfish_username }}"
+  #     password: "{{ var.redfish_password }}"
+  #     command: ForceRestart
+  #     validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # - name: Power cycle server
+  #   module: servers/redfish
+  #   hosts:
+  #     - server-01
+  #   vars:
+  #     baseuri: "{{ var.redfish_baseuri }}"
+  #     username: "{{ var.redfish_username }}"
+  #     password: "{{ var.redfish_password }}"
+  #     command: PowerCycle
+  #     validate_certs: "{{ var.redfish_validate_certs }}"
+
+  # - name: Send NMI to server
+  #   module: servers/redfish
+  #   hosts:
+  #     - server-01
+  #   vars:
+  #     baseuri: "{{ var.redfish_baseuri }}"
+  #     username: "{{ var.redfish_username }}"
+  #     password: "{{ var.redfish_password }}"
+  #     command: Nmi
+  #     validate_certs: "{{ var.redfish_validate_certs }}"

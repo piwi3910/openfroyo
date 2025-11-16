@@ -1,0 +1,7 @@
+name: ilo
+description: HP iLO (Integrated Lights-Out) management module supporting Redfish API operations
+version: 1.0.0
+
+steps:
+  - name: Execute iLO operation
+    module: ilo

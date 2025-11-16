@@ -1,0 +1,19 @@
+name: redfish
+version: 1.0.0
+description: Redfish API module for server management operations
+
+steps:
+  - name: Execute Redfish operation
+    wasm: wasm/redfish.wasm
+    vars:
+      baseuri: "{{ var.baseuri }}"
+      username: "{{ var.username }}"
+      password: "{{ var.password }}"
+      command: "{{ var.command }}"
+      timeout: "{{ var.timeout | default(30) }}"
+      validate_certs: "{{ var.validate_certs | default(true) }}"
+      resource_id: "{{ var.resource_id | default('System.Embedded.1') }}"
+      attributes: "{{ var.attributes | default({}) }}"
+      boot_source: "{{ var.boot_source | default('') }}"
+      boot_mode: "{{ var.boot_mode | default('') }}"
+      firmware_uri: "{{ var.firmware_uri | default('') }}"

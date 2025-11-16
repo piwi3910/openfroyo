@@ -1,0 +1,14 @@
+name: idrac
+version: 1.0.0
+description: Dell iDRAC management via Redfish API
+
+steps:
+  - name: Execute iDRAC command
+    wasm: wasm/idrac.wasm
+    vars:
+      baseuri: "{{ var.baseuri }}"
+      username: "{{ var.username }}"
+      password: "{{ var.password }}"
+      command: "{{ var.command }}"
+      timeout: "{{ var.timeout | default(30) }}"
+      validate_certs: "{{ var.validate_certs | default(true) }}"

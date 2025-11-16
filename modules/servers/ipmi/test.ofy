@@ -1,0 +1,368 @@
+inventory:
+  hosts:
+    - name: server-01
+      connection:
+        host: 192.168.1.10
+        port: 22
+        user: root
+        auth: key
+
+defaults:
+  bmc_host: "192.168.1.100"
+  username: "admin"
+  password: "changeme"
+
+run:
+  # Power Management Tests
+  - name: Get server power status
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "power_status"
+
+  - name: Get chassis status
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "chassis_status"
+
+  # Sensor Monitoring Tests
+  - name: Get all sensor readings
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_all_sensors"
+
+  - name: Get specific sensor (CPU Temp)
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_sensor"
+      sensor_name: "CPU Temp"
+
+  # SEL Tests
+  - name: Get system event log info
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_sel_info"
+
+  - name: Get system event log entries
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_sel"
+
+  # FRU Tests
+  - name: Get FRU inventory
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_fru"
+
+  # User Management Tests
+  - name: List IPMI users
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "list_users"
+      channel: 1
+
+  # LAN Configuration Tests
+  - name: Get LAN configuration
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_lan_config"
+      channel: 1
+
+  # SDR Tests
+  - name: Get SDR repository info
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_sdr_info"
+
+  - name: List all SDR records
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_sdr_list"
+
+  # BMC Info Tests
+  - name: Get BMC information
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_bmc_info"
+
+  - name: Get firmware version
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_firmware_version"
+
+  - name: Get system GUID
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_guid"
+
+  # Boot Device Tests
+  - name: Get current boot device
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_boot_device"
+
+  # Uncomment to test boot device changes (be careful!)
+  # - name: Set PXE boot (one-time)
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_boot_device"
+  #     boot_device: "pxe"
+  #     persistent: false
+
+  # Watchdog Tests
+  - name: Get watchdog timer status
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_watchdog"
+
+  # Channel Tests
+  - name: Get channel info
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_channel_info"
+      channel: 1
+
+  - name: Get channel authentication capabilities
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_channel_authcap"
+      channel: 1
+
+  # Session Tests
+  - name: Get active session information
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "get_session_info"
+
+  # SOL Tests (informational only)
+  - name: Get SOL configuration
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "sol_info"
+      channel: 1
+
+  # Chassis Identify Test (LED blink)
+  - name: Turn on chassis identify LED for 5 seconds
+    module: servers/ipmi
+    vars:
+      bmc_host: "{{ defaults.bmc_host }}"
+      username: "{{ defaults.username }}"
+      password: "{{ defaults.password }}"
+      command: "chassis_identify_on"
+      duration: 5
+
+  # Advanced Power Management Examples (COMMENTED OUT - USE WITH CAUTION)
+  #
+  # - name: Power on server
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "power_on"
+  #
+  # - name: Power off server (hard)
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "power_off"
+  #
+  # - name: Soft shutdown server
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "power_soft"
+  #
+  # - name: Power cycle server
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "power_cycle"
+  #
+  # - name: Reset server
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "power_reset"
+
+  # User Management Examples (COMMENTED OUT - MODIFIES USERS)
+  #
+  # - name: Create new user
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_user_name"
+  #     user_id: 3
+  #     user_name: "operator"
+  #
+  # - name: Set user password
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_user_password"
+  #     user_id: 3
+  #     user_password: "operator123"
+  #
+  # - name: Set user privilege to OPERATOR
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_user_privilege"
+  #     user_id: 3
+  #     channel: 1
+  #     user_privilege: "3"
+  #
+  # - name: Enable user
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "enable_user"
+  #     user_id: 3
+
+  # LAN Configuration Examples (COMMENTED OUT - MODIFIES NETWORK)
+  #
+  # - name: Set static IP address
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_lan_ip_static"
+  #     channel: 1
+  #     ip_address: "192.168.1.101"
+  #     subnet_mask: "255.255.255.0"
+  #     gateway: "192.168.1.1"
+  #
+  # - name: Set DHCP
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_lan_ip_dhcp"
+  #     channel: 1
+  #
+  # - name: Set VLAN
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "set_lan_vlan"
+  #     channel: 1
+  #     vlan_id: 100
+
+  # SEL Management Examples (COMMENTED OUT - MODIFIES SEL)
+  #
+  # - name: Save SEL to file
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "save_sel"
+  #     filepath: "/tmp/server-sel-backup.log"
+  #
+  # - name: Clear SEL (WARNING - DELETES ALL EVENTS)
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "clear_sel"
+
+  # BMC Reset Examples (COMMENTED OUT - REBOOTS BMC)
+  #
+  # - name: Warm reset BMC
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "reset_bmc_warm"
+  #
+  # - name: Cold reset BMC
+  #   module: servers/ipmi
+  #   vars:
+  #     bmc_host: "{{ defaults.bmc_host }}"
+  #     username: "{{ defaults.username }}"
+  #     password: "{{ defaults.password }}"
+  #     command: "reset_bmc_cold"

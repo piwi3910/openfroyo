@@ -1,0 +1,3 @@
+# Default variables for idrac module
+timeout: 30
+validate_certs: true
