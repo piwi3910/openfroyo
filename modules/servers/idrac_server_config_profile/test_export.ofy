@@ -1,0 +1,26 @@
+# Test file for idrac_server_config_profile module - Export
+name: iDRAC SCP Export Test
+inventory: ../../../inventory/hosts.yml
+
+defaults:
+  idrac_ip: "192.168.1.100"
+  idrac_user: "root"
+  idrac_password: "calvin"
+  validate_certs: false
+
+run:
+  - name: Export full configuration
+    module: idrac_server_config_profile
+    vars:
+      command: "export"
+      export_format: "XML"
+      scp_components: "ALL"
+      share_name: "/tmp/server_full_config.xml"
+
+  - name: Export BIOS settings only
+    module: idrac_server_config_profile
+    vars:
+      command: "export"
+      export_format: "JSON"
+      scp_components: "BIOS"
+      share_name: "/tmp/server_bios.json"

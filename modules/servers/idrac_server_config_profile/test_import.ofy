@@ -1,0 +1,26 @@
+# Test file for idrac_server_config_profile module - Import
+name: iDRAC SCP Import Test
+inventory: ../../../inventory/hosts.yml
+
+defaults:
+  idrac_ip: "192.168.1.100"
+  idrac_user: "root"
+  idrac_password: "calvin"
+  validate_certs: false
+
+run:
+  - name: Preview configuration import
+    module: idrac_server_config_profile
+    vars:
+      command: "preview"
+      scp_file: "/tmp/server_config.xml"
+
+  - name: Import configuration with graceful shutdown
+    module: idrac_server_config_profile
+    vars:
+      command: "import"
+      scp_file: "/tmp/server_config.xml"
+      shutdown_type: "Graceful"
+      end_host_power_state: "On"
+      job_wait: true
+      job_wait_timeout: 3600

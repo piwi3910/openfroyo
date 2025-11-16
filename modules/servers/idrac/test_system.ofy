@@ -1,0 +1,25 @@
+# Test file for idrac module - System Configuration
+name: iDRAC System Configuration Test
+inventory: ../../../inventory/hosts.yml
+
+defaults:
+  baseuri: "192.168.1.100"
+  username: "root"
+  password: "calvin"
+  validate_certs: false
+
+run:
+  - name: Get system inventory
+    module: idrac
+    vars:
+      command: "get_system_inventory"
+
+  - name: Get firmware inventory
+    module: idrac
+    vars:
+      command: "get_firmware_inventory"
+
+  - name: Get System Event Log
+    module: idrac
+    vars:
+      command: "get_sel"

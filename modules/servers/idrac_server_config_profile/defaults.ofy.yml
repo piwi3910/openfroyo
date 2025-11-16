@@ -1,0 +1,16 @@
+# Default variables for idrac_server_config_profile module
+
+# Connection settings
+timeout: 120
+validate_certs: true
+
+# Export settings
+export_format: "XML"
+export_use: "Default"
+scp_components: "ALL"
+
+# Import settings
+shutdown_type: "Graceful"
+end_host_power_state: "On"
+job_wait: true
+job_wait_timeout: 3600

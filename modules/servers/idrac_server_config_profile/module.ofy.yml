@@ -1,0 +1,22 @@
+name: idrac_server_config_profile
+version: 1.0.0
+description: Dell iDRAC Server Configuration Profile (SCP) import/export
+
+steps:
+  - name: Execute SCP operation
+    wasm: wasm/idrac_server_config_profile.wasm
+    vars:
+      idrac_ip: "{{ var.idrac_ip }}"
+      idrac_user: "{{ var.idrac_user }}"
+      idrac_password: "{{ var.idrac_password }}"
+      command: "{{ var.command }}"
+      scp_file: "{{ var.scp_file | default('') }}"
+      export_format: "{{ var.export_format | default('XML') }}"
+      export_use: "{{ var.export_use | default('Default') }}"
+      scp_components: "{{ var.scp_components | default('ALL') }}"
+      shutdown_type: "{{ var.shutdown_type | default('Graceful') }}"
+      end_host_power_state: "{{ var.end_host_power_state | default('On') }}"
+      job_wait: "{{ var.job_wait | default(true) }}"
+      job_wait_timeout: "{{ var.job_wait_timeout | default(3600) }}"
+      timeout: "{{ var.timeout | default(120) }}"
+      validate_certs: "{{ var.validate_certs | default(true) }}"
