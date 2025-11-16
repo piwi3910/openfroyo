@@ -1,0 +1,27 @@
+name: Patch Module
+description: Apply patch files to source code
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Path to the patch file (local or remote depending on remote_src)
+
+  - name: dest
+    type: string
+    required: false
+    default: "."
+    description: Directory to apply the patch to
+
+  - name: strip
+    type: integer
+    required: false
+    default: 0
+    description: Number of leading path components to strip (-p flag)
+
+  - name: remote_src
+    type: boolean
+    required: false
+    default: false
+    description: If true, src is on remote host; if false, src is a local file

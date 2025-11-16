@@ -1,0 +1,135 @@
+inventory:
+  - examples/inventory/hosts.yml
+
+defaults:
+  test_dir: /tmp/froyo-module-test
+
+run:
+  # Test 0: Create base test directory
+  - name: Create base test directory
+    module: generic/file
+    vars:
+      path: /tmp/froyo-module-test
+      state: directory
+    hosts:
+      - test-host
+
+  # Test 1: tempfile module - create temporary file
+  - name: Create temporary file
+    module: generic/tempfile
+    vars:
+      state: file
+      path: /tmp/froyo-module-test
+      prefix: "test-"
+      suffix: ".tmp"
+    hosts:
+      - test-host
+
+  # Test 2: tempfile module - create temporary directory
+  - name: Create temporary directory
+    module: generic/tempfile
+    vars:
+      state: directory
+      path: /tmp/froyo-module-test
+      prefix: "test-dir-"
+    hosts:
+      - test-host
+
+  # Test 3: file module - create test file for replace
+  - name: Create test file
+    module: generic/file
+    vars:
+      path: /tmp/froyo-module-test/test-replace.txt
+      state: file
+    hosts:
+      - test-host
+
+  # Test 4: command module - write content to file
+  - name: Write test content
+    module: generic/command
+    vars:
+      cmd: echo "Hello World, this is a test" > /tmp/froyo-module-test/test-replace.txt
+    hosts:
+      - test-host
+
+  # Test 5: replace module - replace text
+  - name: Replace text in file
+    module: generic/replace
+    vars:
+      path: /tmp/froyo-module-test/test-replace.txt
+      regexp: "World"
+      replace: "OpenFroyo"
+      backup: true
+    hosts:
+      - test-host
+
+  # Test 6: stat module - check file stats
+  - name: Check file stats
+    module: generic/stat
+    vars:
+      path: /tmp/froyo-module-test/test-replace.txt
+    hosts:
+      - test-host
+
+  # Test 7: Create files for archive test
+  - name: Create directory for archiving
+    module: generic/file
+    vars:
+      path: /tmp/froyo-module-test/archive-test
+      state: directory
+    hosts:
+      - test-host
+
+  # Test 8: Create test files
+  - name: Create test files for archiving
+    module: generic/command
+    vars:
+      cmd: "cd /tmp/froyo-module-test/archive-test && echo 'file1' > file1.txt && echo 'file2' > file2.txt && echo 'file3' > file3.txt"
+    hosts:
+      - test-host
+
+  # Test 9: archive module - create tar.gz
+  - name: Create archive
+    module: generic/archive
+    vars:
+      path: /tmp/froyo-module-test/archive-test
+      dest: /tmp/froyo-module-test/test-archive.tar.gz
+      format: "gz"
+    hosts:
+      - test-host
+
+  # Test 10: Create directory for extraction
+  - name: Create extraction directory
+    module: generic/file
+    vars:
+      path: /tmp/froyo-module-test/unarchive-test
+      state: directory
+    hosts:
+      - test-host
+
+  # Test 11: unarchive module - extract tar.gz
+  - name: Extract archive
+    module: generic/unarchive
+    vars:
+      src: /tmp/froyo-module-test/test-archive.tar.gz
+      dest: /tmp/froyo-module-test/unarchive-test
+      remote_src: true
+    hosts:
+      - test-host
+
+  # Test 12: Verify extraction
+  - name: List extracted files
+    module: generic/command
+    vars:
+      cmd: "ls -la /tmp/froyo-module-test/unarchive-test"
+    hosts:
+      - test-host
+
+  # Test 13: Clean up
+  - name: Remove test directory
+    module: generic/file
+    vars:
+      path: /tmp/froyo-module-test
+      state: absent
+    hosts:
+      - test-host

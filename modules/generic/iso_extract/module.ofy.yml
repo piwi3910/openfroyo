@@ -1,0 +1,24 @@
+name: ISO Extract Module
+description: Extract files from ISO images
+version: 1.0.0
+
+variables:
+  - name: image
+    type: string
+    required: true
+    description: Path to the ISO image file
+
+  - name: dest
+    type: string
+    required: true
+    description: Destination directory for extracted files
+
+  - name: files
+    type: array
+    required: false
+    description: List of specific files to extract (extracts all if not specified)
+
+  - name: creates
+    type: string
+    required: false
+    description: Skip extraction if this file already exists (idempotency check)

@@ -1,0 +1,60 @@
+# Synchronize Module Test
+#
+# This module syncs files and directories using rsync
+#
+# Usage:
+#   froyo apply modules/generic/synchronize/test.ofy
+#
+# Variables:
+#   - src (required): Source path to sync from
+#   - dest (required): Destination path to sync to
+#   - delete: Delete extraneous files from dest (default: false)
+#   - recursive: Recurse into directories (default: true)
+#   - archive: Archive mode - preserve permissions, times, etc. (default: true)
+#   - checksum: Use checksums instead of mod-time and size (default: false)
+
+name: Synchronize Module Test
+description: Test and demonstrate the synchronize module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Sync a directory with archive mode
+    module: generic/synchronize
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/source/
+      dest: /tmp/destination/
+      archive: true
+
+  - name: Sync with delete option
+    module: generic/synchronize
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/source/
+      dest: /tmp/destination/
+      delete: true
+      archive: true
+
+  - name: Sync using checksums
+    module: generic/synchronize
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/source/
+      dest: /tmp/destination/
+      checksum: true
+      archive: true
+
+  - name: Simple recursive sync without archive
+    module: generic/synchronize
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/source/
+      dest: /tmp/destination/
+      archive: false
+      recursive: true

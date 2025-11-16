@@ -1,0 +1,81 @@
+# INI File Module Test
+#
+# This module manages INI file sections and options
+#
+# Usage:
+#   froyo apply modules/generic/ini_file/test.ofy
+#
+# Variables:
+#   - path (required): Path to the INI file
+#   - section (required): Section name
+#   - option: Option name within section
+#   - value: Value for the option
+#   - state: present or absent (default: present)
+#   - no_extra_spaces: Remove spaces around = (default: false)
+#   - create: Create file if doesn't exist (default: true)
+
+name: INI File Module Test
+description: Test and demonstrate the ini_file module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create INI file and add a section
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: database
+      create: true
+
+  - name: Set database host option
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: database
+      option: host
+      value: localhost
+
+  - name: Set database port option
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: database
+      option: port
+      value: "5432"
+
+  - name: Add application settings section
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: application
+      option: debug
+      value: "false"
+      no_extra_spaces: true
+
+  - name: Remove an option
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: database
+      option: old_setting
+      state: absent
+
+  - name: Remove an entire section
+    module: generic/ini_file
+    hosts:
+      - test-host
+    vars:
+      path: /etc/myapp/config.ini
+      section: deprecated_section
+      state: absent

@@ -1,0 +1,14 @@
+name: gem
+version: 1.0.0
+description: Manage Ruby gems using the RubyGems package manager
+
+steps:
+  - name: Manage Ruby gem
+    wasm: wasm/gem.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      version: "{{ var.version | default('') }}"
+      user_install: "{{ var.user_install | default(true) }}"
+      source: "{{ var.source | default('') }}"
+      install_dir: "{{ var.install_dir | default('') }}"

@@ -1,0 +1,38 @@
+name: Synchronize Module
+description: Sync files and directories using rsync
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Source path to sync from
+
+  - name: dest
+    type: string
+    required: true
+    description: Destination path to sync to
+
+  - name: delete
+    type: boolean
+    required: false
+    default: false
+    description: Delete extraneous files from destination directories
+
+  - name: recursive
+    type: boolean
+    required: false
+    default: true
+    description: Recurse into directories
+
+  - name: archive
+    type: boolean
+    required: false
+    default: true
+    description: Archive mode (preserve permissions, times, symlinks, etc.)
+
+  - name: checksum
+    type: boolean
+    required: false
+    default: false
+    description: Skip files based on checksum instead of mod-time and size

@@ -1,0 +1,31 @@
+stack:
+  name: Test Fetch Module
+  description: Test cases for the fetch module
+
+inventory:
+  - localhost
+
+defaults:
+  connection: local
+
+run:
+  - name: Fetch a remote configuration file
+    module: fetch
+    vars:
+      src: /etc/hostname
+      dest: ./fetched-hostname.txt
+      fail_on_missing: true
+
+  - name: Fetch log file (don't fail if missing)
+    module: fetch
+    vars:
+      src: /var/log/test.log
+      dest: ./fetched-test.log
+      fail_on_missing: false
+
+  - name: Fetch with flat directory structure
+    module: fetch
+    vars:
+      src: /etc/hosts
+      dest: ./fetched-files/
+      flat: true

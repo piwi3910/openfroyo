@@ -1,0 +1,26 @@
+name: Fetch Module
+description: Fetch files from remote hosts to local machine
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Remote file path to fetch
+
+  - name: dest
+    type: string
+    required: true
+    description: Local destination path
+
+  - name: flat
+    type: boolean
+    required: false
+    default: false
+    description: Flatten directory structure (store in dest without subdirectories)
+
+  - name: fail_on_missing
+    type: boolean
+    required: false
+    default: true
+    description: Fail if source file doesn't exist

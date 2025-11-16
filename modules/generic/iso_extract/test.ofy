@@ -1,0 +1,55 @@
+# ISO Extract Module Test
+#
+# This module extracts files from ISO images
+#
+# Usage:
+#   froyo apply modules/generic/iso_extract/test.ofy
+#
+# Variables:
+#   - image (required): Path to ISO image file
+#   - dest (required): Destination directory
+#   - files: List of specific files to extract (optional)
+#   - creates: Skip if this file exists (idempotency)
+
+name: ISO Extract Module Test
+description: Test and demonstrate the iso_extract module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Extract entire ISO image
+    module: generic/iso_extract
+    hosts:
+      - test-host
+    vars:
+      image: /tmp/alpine-linux.iso
+      dest: /tmp/alpine-extracted
+
+  - name: Extract specific files from ISO
+    module: generic/iso_extract
+    hosts:
+      - test-host
+    vars:
+      image: /tmp/ubuntu-server.iso
+      dest: /tmp/ubuntu-files
+      files:
+        - boot/vmlinuz
+        - boot/initrd.img
+
+  - name: Extract ISO with idempotency check
+    module: generic/iso_extract
+    hosts:
+      - test-host
+    vars:
+      image: /tmp/debian.iso
+      dest: /var/cache/debian-iso
+      creates: /var/cache/debian-iso/.extracted
+
+  - name: Extract Windows ISO
+    module: generic/iso_extract
+    hosts:
+      - test-host
+    vars:
+      image: /mnt/windows.iso
+      dest: /tmp/windows-files

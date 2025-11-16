@@ -1,0 +1,60 @@
+# Tempfile Module Test
+#
+# This module creates temporary files or directories
+#
+# Usage:
+#   froyo apply modules/generic/tempfile/test.ofy
+#
+# Variables:
+#   - state: file or directory (default: file)
+#   - path: Base path for temp file (default: /tmp)
+#   - prefix: Filename prefix (default: "ansible.")
+#   - suffix: Filename suffix (default: "")
+
+name: Tempfile Module Test
+description: Test and demonstrate the tempfile module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create a temporary file with default settings
+    module: generic/tempfile
+    hosts:
+      - test-host
+    vars:
+      state: file
+
+  - name: Create a temporary file with custom prefix
+    module: generic/tempfile
+    hosts:
+      - test-host
+    vars:
+      state: file
+      prefix: "froyo-test-"
+
+  - name: Create a temporary file with prefix and suffix
+    module: generic/tempfile
+    hosts:
+      - test-host
+    vars:
+      state: file
+      prefix: "froyo-"
+      suffix: ".txt"
+
+  - name: Create a temporary directory
+    module: generic/tempfile
+    hosts:
+      - test-host
+    vars:
+      state: directory
+      prefix: "froyo-tmpdir-"
+
+  - name: Create a temporary directory in custom path
+    module: generic/tempfile
+    hosts:
+      - test-host
+    vars:
+      state: directory
+      path: /var/tmp
+      prefix: "froyo-"

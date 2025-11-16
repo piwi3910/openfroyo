@@ -1,0 +1,42 @@
+name: INI File Module
+description: Manage INI file sections and options
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the INI file to manage
+
+  - name: section
+    type: string
+    required: true
+    description: Section name in the INI file
+
+  - name: option
+    type: string
+    required: false
+    description: Option name within the section
+
+  - name: value
+    type: string
+    required: false
+    description: Value for the option
+
+  - name: state
+    type: string
+    required: false
+    default: present
+    description: "Desired state: present or absent"
+
+  - name: no_extra_spaces
+    type: boolean
+    required: false
+    default: false
+    description: Remove spaces around the = delimiter
+
+  - name: create
+    type: boolean
+    required: false
+    default: true
+    description: Create the file if it doesn't exist

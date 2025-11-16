@@ -1,0 +1,28 @@
+name: Temporary File Module
+description: Create temporary files or directories
+version: 1.0.0
+
+variables:
+  - name: state
+    type: string
+    required: false
+    default: file
+    description: "Type of temporary item to create: file or directory"
+
+  - name: path
+    type: string
+    required: false
+    default: /tmp
+    description: Base path for temporary file/directory
+
+  - name: prefix
+    type: string
+    required: false
+    default: "ansible."
+    description: Prefix for temporary filename
+
+  - name: suffix
+    type: string
+    required: false
+    default: ""
+    description: Suffix for temporary filename

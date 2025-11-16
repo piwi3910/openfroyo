@@ -1,0 +1,116 @@
+# XML Module Test
+#
+# This module manages XML files using XPath expressions
+#
+# Usage:
+#   froyo apply modules/generic/xml/test.ofy
+#
+# Variables:
+#   - path (required): Path to the XML file
+#   - xpath (required): XPath expression
+#   - value: Value to set
+#   - attribute: Attribute name to set
+#   - state: present or absent (default: present)
+#   - pretty_print: Pretty print XML (default: false)
+#   - count: Count matching nodes (default: false)
+
+name: XML Module Test
+description: Test and demonstrate the XML module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test XML file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      state: file
+      mode: "0644"
+
+  - name: Write initial XML content
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: |
+        cat > /tmp/froyo-xml-test.xml << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration>
+          <settings>
+            <option name="debug" value="false"/>
+            <option name="timeout" value="30"/>
+          </settings>
+          <database>
+            <host>localhost</host>
+            <port>5432</port>
+          </database>
+        </configuration>
+        EOF
+
+  - name: Count option elements
+    module: generic/xml
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      xpath: //option
+      count: true
+
+  - name: Update debug option value
+    module: generic/xml
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      xpath: //option[@name='debug']
+      attribute: value
+      value: "true"
+      state: present
+
+  - name: Update database host
+    module: generic/xml
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      xpath: //database/host
+      value: db.example.com
+      state: present
+      pretty_print: true
+
+  - name: Update database port
+    module: generic/xml
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      xpath: //database/port
+      value: "3306"
+      state: present
+
+  - name: Remove timeout option
+    module: generic/xml
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      xpath: //option[@name='timeout']
+      state: absent
+
+  - name: Display final XML
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/froyo-xml-test.xml
+
+  - name: Cleanup test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xml-test.xml
+      state: absent

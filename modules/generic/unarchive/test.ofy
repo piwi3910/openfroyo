@@ -1,0 +1,54 @@
+stack:
+  name: Test Unarchive Module
+  description: Test cases for the unarchive module
+
+inventory:
+  - localhost
+
+defaults:
+  connection: local
+
+run:
+  - name: Extract remote tar.gz archive
+    module: unarchive
+    vars:
+      src: /tmp/backups/app.tar.gz
+      dest: /opt/app
+      remote_src: true
+
+  - name: Extract local archive to remote host
+    module: unarchive
+    vars:
+      src: ./local-archive.tar.gz
+      dest: /var/www/html
+      remote_src: false
+
+  - name: Extract with idempotency check
+    module: unarchive
+    vars:
+      src: /tmp/config.tar.gz
+      dest: /etc/myapp
+      remote_src: true
+      creates: /etc/myapp/config.yml
+
+  - name: Extract and list files
+    module: unarchive
+    vars:
+      src: /backups/data.zip
+      dest: /opt/data
+      remote_src: true
+      list_files: true
+
+  - name: Extract bzip2 archive
+    module: unarchive
+    vars:
+      src: /tmp/logs.tar.bz2
+      dest: /var/log/archived
+      remote_src: true
+
+  - name: Extract xz archive
+    module: unarchive
+    vars:
+      src: /tmp/database.tar.xz
+      dest: /var/lib/db-restore
+      remote_src: true

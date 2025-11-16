@@ -1,0 +1,8 @@
+name: ""
+state: present
+version: ""
+requirements: ""
+virtualenv: ""
+extra_args: ""
+executable: pip3
+user: false

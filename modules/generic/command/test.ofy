@@ -1,0 +1,50 @@
+# Command Module Test
+#
+# This module executes shell commands on remote hosts.
+#
+# Usage:
+#   froyo apply modules/generic/command/test.ofy
+#
+# Variables:
+#   - cmd (required): The command to execute
+#
+# Examples in this test:
+#   1. Simple command (uname -r)
+#   2. Command with pipes (ls | wc -l)
+#   3. Environment variable access (echo $HOME)
+#   4. Multi-command with && (pwd && whoami)
+
+name: Command Module Test
+description: Test and demonstrate the command module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Get kernel version
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: uname -r
+
+  - name: Count files in home directory
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: ls -la ~ | wc -l
+
+  - name: Check current user and directory
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: whoami && pwd
+
+  - name: Get system information
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: cat /etc/os-release | grep PRETTY_NAME

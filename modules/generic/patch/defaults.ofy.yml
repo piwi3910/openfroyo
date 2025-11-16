@@ -1,0 +1,3 @@
+dest: "."
+strip: 0
+remote_src: false

@@ -1,0 +1,77 @@
+# File Module Test
+#
+# This module manages files, directories, permissions, and ownership
+#
+# Usage:
+#   froyo apply modules/generic/file/test.ofy
+#
+# Variables:
+#   - path (required): Path to the file/directory
+#   - state: file, directory, link, absent, touch (default: file)
+#   - mode: Permissions in octal (e.g., '0644')
+#   - owner: File owner
+#   - group: File group
+#   - src: Source for symlinks
+#   - recurse: Recursively set permissions (for directories)
+
+name: File Module Test
+description: Test and demonstrate the file module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create a directory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test
+      state: directory
+      mode: "0755"
+
+  - name: Create a file in the directory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test/test.txt
+      state: file
+      mode: "0644"
+
+  - name: Touch a file (update timestamp)
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test/touched.txt
+      state: touch
+
+  - name: Create a symlink
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test/link.txt
+      state: link
+      src: /tmp/froyo-test/test.txt
+
+  - name: Set ownership and permissions
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test
+      state: directory
+      owner: openfroyo
+      group: openfroyo
+      mode: "0755"
+      recurse: true
+
+  - name: Remove a file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-test/touched.txt
+      state: absent

@@ -1,0 +1,52 @@
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  # Test pip module only (since that's the only package manager available)
+  - name: Check pip3 version
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: pip3 --version
+
+  - name: Install Python package with pip (user install)
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: present
+      user: true
+
+  - name: Verify requests is installed
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: pip3 list | grep requests
+
+  - name: Update requests to latest version
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: latest
+      user: true
+
+  - name: Remove requests package
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: absent
+      user: true
+
+  - name: Verify requests is removed
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: pip3 list | grep requests || echo "requests not found (successfully removed)"

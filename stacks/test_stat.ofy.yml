@@ -1,0 +1,31 @@
+name: Test Stat Module
+description: Test stack for the stat module
+version: 1.0.0
+
+inventory:
+  - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  - name: Stat an existing file
+    module: generic/stat
+    hosts:
+      - localhost
+    vars:
+      path: /etc/hosts
+
+  - name: Stat /tmp directory
+    module: generic/stat
+    hosts:
+      - localhost
+    vars:
+      path: /tmp
+
+  - name: Stat non-existent file
+    module: generic/stat
+    hosts:
+      - localhost
+    vars:
+      path: /tmp/does_not_exist_openfroyo_test

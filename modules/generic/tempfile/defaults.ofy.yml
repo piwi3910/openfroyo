@@ -1,0 +1,4 @@
+state: file
+path: /tmp
+prefix: "ansible."
+suffix: ""

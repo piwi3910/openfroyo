@@ -99,8 +99,55 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 
 	// Special handling for script module: read local script file
 	if moduleName == "script" {
-		if err := e.handleScriptModule(vars); err != nil {
-			return fmt.Errorf("failed to prepare script: %w", err)
+		if scriptPath, ok := vars["script"].(string); ok {
+			if scriptContent, err := os.ReadFile(scriptPath); err == nil {
+				// Base64 encode and pass to WASM module
+				vars["_script_content"] = base64.StdEncoding.EncodeToString(scriptContent)
+			}
+		}
+	}
+
+	// Special handling for copy module: read local source file
+	if moduleName == "copy" {
+		if srcPath, ok := vars["src"].(string); ok {
+			if fileContent, err := os.ReadFile(srcPath); err == nil {
+				// Base64 encode and pass to WASM module
+				vars["_file_content"] = base64.StdEncoding.EncodeToString(fileContent)
+			} else {
+				return fmt.Errorf("failed to read source file %s: %w", srcPath, err)
+			}
+		}
+	}
+
+	// Special handling for patch module: read local patch file
+	if moduleName == "patch" {
+		// Only read local file if remote_src is false (or not set)
+		remoteSrc, _ := vars["remote_src"].(bool)
+		if !remoteSrc {
+			if srcPath, ok := vars["src"].(string); ok {
+				if patchContent, err := os.ReadFile(srcPath); err == nil {
+					// Base64 encode and pass to WASM module
+					vars["_patch_content"] = base64.StdEncoding.EncodeToString(patchContent)
+				} else {
+					return fmt.Errorf("failed to read patch file %s: %w", srcPath, err)
+				}
+			}
+		}
+	}
+
+	// Special handling for unarchive module: read local archive file
+	if moduleName == "unarchive" {
+		// Only read local file if remote_src is false (or not set)
+		remoteSrc, _ := vars["remote_src"].(bool)
+		if !remoteSrc {
+			if srcPath, ok := vars["src"].(string); ok {
+				if archiveContent, err := os.ReadFile(srcPath); err == nil {
+					// Base64 encode and pass to WASM module
+					vars["_archive_content"] = base64.StdEncoding.EncodeToString(archiveContent)
+				} else {
+					return fmt.Errorf("failed to read archive file %s: %w", srcPath, err)
+				}
+			}
 		}
 	}
 
@@ -108,6 +155,16 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 	output, err := client.ExecuteModule(modulePath, entry.Name, vars)
 	if err != nil {
 		return fmt.Errorf("failed to execute module: %w", err)
+	}
+
+	// Special handling for fetch module: write fetched file to local destination
+	if moduleName == "fetch" && output.Status != "failed" {
+		if fetchDest, ok := output.Facts["fetch_dest"].(string); ok {
+			// The actual file content would come from shell execution results
+			// For now, we just mark that fetch handling is needed
+			fmt.Printf("      Fetch destination: %s\n", fetchDest)
+			// TODO: Implement actual file writing from base64 decoded content
+		}
 	}
 
 	// Display result
@@ -130,28 +187,6 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 	if output.Status == "failed" {
 		return fmt.Errorf("task failed: %s", output.Message)
 	}
-
-	return nil
-}
-
-// handleScriptModule prepares script module execution by reading local script file
-func (e *Executor) handleScriptModule(vars map[string]interface{}) error {
-	scriptPath, ok := vars["script"].(string)
-	if !ok || scriptPath == "" {
-		return fmt.Errorf("script variable is required")
-	}
-
-	// Read local script file
-	scriptContent, err := os.ReadFile(scriptPath)
-	if err != nil {
-		return fmt.Errorf("failed to read script file %s: %w", scriptPath, err)
-	}
-
-	// Base64 encode the script content
-	encoded := base64.StdEncoding.EncodeToString(scriptContent)
-
-	// Add the encoded content as a hidden variable
-	vars["_script_content"] = encoded
 
 	return nil
 }

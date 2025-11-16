@@ -1,0 +1,32 @@
+name: Assemble Module
+description: Assemble configuration files from fragments
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Directory containing configuration fragments
+
+  - name: dest
+    type: string
+    required: true
+    description: Destination file path for assembled configuration
+
+  - name: delimiter
+    type: string
+    required: false
+    default: ""
+    description: Delimiter to insert between fragments
+
+  - name: regexp
+    type: string
+    required: false
+    default: ""
+    description: Only include files matching this regular expression
+
+  - name: ignore_hidden
+    type: boolean
+    required: false
+    default: true
+    description: Ignore files starting with . (hidden files)

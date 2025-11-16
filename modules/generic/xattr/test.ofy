@@ -1,0 +1,75 @@
+# Extended Attributes Module Test
+#
+# This module manages extended file attributes (xattr)
+#
+# Usage:
+#   froyo apply modules/generic/xattr/test.ofy
+#
+# Variables:
+#   - path (required): Path to the file/directory
+#   - key (required): Extended attribute name
+#   - value: Attribute value (required for state=present)
+#   - state: present or absent (default: present)
+
+name: Extended Attributes Module Test
+description: Test and demonstrate the xattr module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      state: file
+      mode: "0644"
+
+  - name: Set custom extended attribute
+    module: generic/xattr
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      key: user.custom.author
+      value: OpenFroyo Team
+      state: present
+
+  - name: Set another extended attribute
+    module: generic/xattr
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      key: user.custom.version
+      value: "1.0.0"
+      state: present
+
+  - name: Set description attribute
+    module: generic/xattr
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      key: user.custom.description
+      value: Test file for xattr module
+      state: present
+
+  - name: Remove extended attribute
+    module: generic/xattr
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      key: user.custom.version
+      state: absent
+
+  - name: Cleanup test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-xattr-test.txt
+      state: absent

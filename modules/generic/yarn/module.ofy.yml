@@ -1,0 +1,14 @@
+name: yarn
+version: 1.0.0
+description: Manage Node.js packages using the Yarn package manager
+
+steps:
+  - name: Manage yarn package
+    wasm: wasm/yarn.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      version: "{{ var.version | default('') }}"
+      global: "{{ var.global | default(false) }}"
+      path: "{{ var.path | default('') }}"
+      production: "{{ var.production | default(false) }}"

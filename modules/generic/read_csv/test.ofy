@@ -1,0 +1,51 @@
+# Read CSV Module Test
+#
+# This module reads CSV files and returns their contents as structured data
+#
+# Usage:
+#   froyo apply modules/generic/read_csv/test.ofy
+#
+# Variables:
+#   - path (required): Path to CSV file
+#   - key: Column name to use as dictionary key
+#   - delimiter: Field delimiter (default: ",")
+#   - skipinitialspace: Skip whitespace after delimiter (default: false)
+
+name: Read CSV Module Test
+description: Test and demonstrate the read_csv module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Read a simple CSV file
+    module: generic/read_csv
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/test.csv
+
+  - name: Read CSV with custom delimiter
+    module: generic/read_csv
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/data.tsv
+      delimiter: "\t"
+
+  - name: Read CSV with key column
+    module: generic/read_csv
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/users.csv
+      key: username
+
+  - name: Read CSV and skip initial spaces
+    module: generic/read_csv
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/spaced.csv
+      delimiter: ","
+      skipinitialspace: true

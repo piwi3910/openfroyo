@@ -1,0 +1,26 @@
+name: Archive Module
+description: Create compressed archives (tar.gz, tar.bz2, zip, tar.xz)
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Files or directories to archive (space-separated for multiple)
+
+  - name: dest
+    type: string
+    required: true
+    description: Archive file destination path
+
+  - name: format
+    type: string
+    required: false
+    default: gz
+    description: "Archive format: gz (tar.gz), bz2 (tar.bz2), xz (tar.xz), zip"
+
+  - name: remove
+    type: boolean
+    required: false
+    default: false
+    description: Remove original files after successful archiving

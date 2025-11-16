@@ -1,0 +1,78 @@
+# Replace Module Test
+#
+# This module replaces text in files using regular expressions
+#
+# Usage:
+#   froyo apply modules/generic/replace/test.ofy
+#
+# Variables:
+#   - path (required): File to modify
+#   - regexp (required): Regular expression pattern to find
+#   - replace (required): Replacement text
+#   - backup: Create backup with .bak extension (default: false)
+
+name: Replace Module Test
+description: Test and demonstrate the replace module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create a test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/replace-test.txt
+      state: touch
+
+  - name: Write test content to file
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "Hello World\nThis is a test\nHello again" > /tmp/replace-test.txt
+
+  - name: Replace Hello with Hi (no backup)
+    module: generic/replace
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/replace-test.txt
+      regexp: "Hello"
+      replace: "Hi"
+      backup: false
+
+  - name: Create another test file
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "port=8080\nhost=localhost" > /tmp/config.txt
+
+  - name: Replace port number with backup
+    module: generic/replace
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/config.txt
+      regexp: "port=8080"
+      replace: "port=9090"
+      backup: true
+
+  - name: Replace hostname
+    module: generic/replace
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/config.txt
+      regexp: "localhost"
+      replace: "0.0.0.0"
+
+  - name: Clean up test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/replace-test.txt
+      state: absent

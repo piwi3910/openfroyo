@@ -1,0 +1,39 @@
+# Test file for copy module
+
+# Test 1: Simple file copy
+- name: Copy simple file
+  copy:
+    src: /tmp/test_source.txt
+    dest: /tmp/test_dest.txt
+
+# Test 2: Copy with permissions
+- name: Copy file with specific permissions
+  copy:
+    src: /tmp/test_source.txt
+    dest: /tmp/test_dest_perms.txt
+    mode: "0600"
+
+# Test 3: Copy with ownership
+- name: Copy file with owner and group
+  copy:
+    src: /tmp/test_source.txt
+    dest: /tmp/test_dest_owner.txt
+    owner: www-data
+    group: www-data
+
+# Test 4: Copy with backup
+- name: Copy file with backup
+  copy:
+    src: /tmp/test_source.txt
+    dest: /tmp/test_dest_backup.txt
+    backup: true
+
+# Test 5: Copy with all options
+- name: Copy file with all options
+  copy:
+    src: /tmp/test_source.txt
+    dest: /var/www/html/index.html
+    mode: "0644"
+    owner: www-data
+    group: www-data
+    backup: true

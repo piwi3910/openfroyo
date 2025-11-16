@@ -1,0 +1,26 @@
+# Test file for stat module
+
+# Test 1: Stat an existing file
+- name: Stat /etc/hosts
+  stat:
+    path: /etc/hosts
+
+# Test 2: Stat a directory
+- name: Stat /tmp directory
+  stat:
+    path: /tmp
+
+# Test 3: Stat a non-existent file
+- name: Stat non-existent file
+  stat:
+    path: /tmp/does_not_exist
+
+# Test 4: Stat a symlink
+- name: Stat a symlink
+  stat:
+    path: /usr/bin/python
+
+# Test 5: Stat home directory
+- name: Stat home directory
+  stat:
+    path: /root

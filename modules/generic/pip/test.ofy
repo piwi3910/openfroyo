@@ -1,0 +1,92 @@
+# Pip Module Test
+#
+# This module manages Python packages using pip.
+# Supports: pip, pip3, pip2
+#
+# Usage:
+#   froyo apply modules/generic/pip/test.ofy
+#
+# Variables:
+#   - name (required if no requirements): Package name to manage
+#   - state (optional): Desired state (present, absent, latest) - default: present
+#   - version (optional): Specific version to install
+#   - requirements (optional): Path to requirements.txt file
+#   - virtualenv (optional): Path to virtualenv
+#   - extra_args (optional): Extra arguments to pass to pip
+#   - executable (optional): pip executable (pip, pip3, pip2) - default: pip3
+#   - user (optional): Install to user site-packages - default: false
+#
+# Examples in this test:
+#   1. Install a package (requests)
+#   2. Install specific version of package
+#   3. Install with user flag
+#   4. Upgrade package to latest
+#   5. Install from requirements.txt
+#   6. Install in virtualenv
+#   7. Remove a package
+
+name: Pip Module Test
+description: Test and demonstrate the pip module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Install requests package
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: present
+
+  - name: Install specific version of flask
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: flask
+      state: present
+      version: "2.3.0"
+
+  - name: Install package to user site-packages
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: black
+      state: present
+      user: true
+
+  - name: Upgrade numpy to latest
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: numpy
+      state: latest
+
+  - name: Install from requirements file
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      requirements: /path/to/requirements.txt
+      state: present
+
+  - name: Install in virtualenv
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: django
+      state: present
+      virtualenv: /opt/myapp/venv
+
+  - name: Remove pytest package
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: pytest
+      state: absent

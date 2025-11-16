@@ -1,0 +1,125 @@
+# Find Files Module Test
+#
+# This module searches for files and directories matching criteria
+#
+# Usage:
+#   froyo apply modules/generic/find/test.ofy
+#
+# Variables:
+#   - path (required): Directory to search in
+#   - patterns: File name patterns (e.g., '*.txt')
+#   - file_type: file, directory, link, or any (default: any)
+#   - age: File age (+N older, -N newer in days)
+#   - age_stamp: mtime, atime, or ctime (default: mtime)
+#   - size: File size (+N larger, -N smaller)
+#   - recurse: Recursive search (default: true)
+#   - hidden: Include hidden files (default: false)
+#   - depth: Maximum search depth
+
+name: Find Files Module Test
+description: Test and demonstrate the find module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test directory structure
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      state: directory
+
+  - name: Create test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test/test1.txt
+      state: file
+
+  - name: Create more test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test/test2.log
+      state: file
+
+  - name: Create subdirectory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test/subdir
+      state: directory
+
+  - name: Create file in subdirectory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test/subdir/nested.txt
+      state: file
+
+  - name: Find all files (recursive)
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: file
+
+  - name: Find only .txt files
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      patterns: "*.txt"
+      file_type: file
+
+  - name: Find directories only
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: directory
+
+  - name: Find files non-recursively
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: file
+      recurse: false
+
+  - name: Find files with depth limit
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: file
+      depth: "1"
+
+  - name: Find recently modified files (last 7 days)
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: file
+      age: "-7"
+      age_stamp: mtime
+
+  - name: Find all items (files and directories)
+    module: generic/find
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-find-test
+      file_type: any

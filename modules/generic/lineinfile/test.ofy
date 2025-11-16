@@ -1,0 +1,102 @@
+# Line in File Module Test
+#
+# This module manages lines in text files - add, remove, or replace lines
+#
+# Usage:
+#   froyo apply modules/generic/lineinfile/test.ofy
+#
+# Variables:
+#   - path (required): Path to the file to manage
+#   - line: Text of the line to ensure exists
+#   - regexp: Regular expression to match lines
+#   - state: present or absent (default: present)
+#   - insertafter: Insert after this pattern (or 'EOF')
+#   - insertbefore: Insert before this pattern (or 'BOF')
+#   - backup: Create backup before modification (default: false)
+#   - create: Create file if not exists (default: false)
+
+name: Line in File Module Test
+description: Test and demonstrate the lineinfile module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      state: file
+
+  - name: Add initial content
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      line: "# Configuration file"
+      insertbefore: BOF
+
+  - name: Add a configuration line
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      line: "port=8080"
+      insertafter: EOF
+
+  - name: Add another configuration line
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      line: "host=localhost"
+      insertafter: EOF
+
+  - name: Replace port configuration
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      regexp: "^port="
+      line: "port=9090"
+
+  - name: Add comment before host line
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      line: "# Server host configuration"
+      insertbefore: "^host="
+
+  - name: Remove a line by pattern
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      regexp: "^# Server host"
+      state: absent
+
+  - name: Ensure line exists with backup
+    module: generic/lineinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      line: "debug=true"
+      backup: true
+
+  - name: Display final file contents
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-lineinfile-test.txt
+      state: file

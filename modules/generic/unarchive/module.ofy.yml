@@ -1,0 +1,31 @@
+name: Unarchive Module
+description: Extract compressed archives (tar.gz, tar.bz2, tar.xz, zip)
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Archive file path (local or remote depending on remote_src)
+
+  - name: dest
+    type: string
+    required: true
+    description: Extraction destination directory
+
+  - name: remote_src
+    type: boolean
+    required: false
+    default: false
+    description: If true, src is on remote host; if false, src is local and will be uploaded
+
+  - name: creates
+    type: string
+    required: false
+    description: If this file exists, skip extraction (idempotency check)
+
+  - name: list_files
+    type: boolean
+    required: false
+    default: false
+    description: List files in archive before extraction

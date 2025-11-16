@@ -1,0 +1,47 @@
+# Patch Module Test
+#
+# This module applies patch files to source code
+#
+# Usage:
+#   froyo apply modules/generic/patch/test.ofy
+#
+# Variables:
+#   - src (required): Path to the patch file
+#   - dest: Directory to apply patch to (default: current directory)
+#   - strip: Number of leading path components to strip (default: 0)
+#   - remote_src: If true, patch file is on remote host (default: false)
+
+name: Patch Module Test
+description: Test and demonstrate the patch module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Apply a local patch file with strip level 1
+    module: generic/patch
+    hosts:
+      - test-host
+    vars:
+      src: ./fixes/bugfix.patch
+      dest: /opt/myapp
+      strip: 1
+      remote_src: false
+
+  - name: Apply a patch file already on remote host
+    module: generic/patch
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/remote-patch.patch
+      dest: /opt/myapp
+      strip: 0
+      remote_src: true
+
+  - name: Apply patch to current directory
+    module: generic/patch
+    hosts:
+      - test-host
+    vars:
+      src: ./myfix.patch
+      remote_src: false

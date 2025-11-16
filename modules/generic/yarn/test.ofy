@@ -1,0 +1,102 @@
+# Yarn Module Test
+#
+# This module manages Node.js packages using the Yarn package manager.
+#
+# Usage:
+#   froyo apply modules/generic/yarn/test.ofy
+#
+# Variables:
+#   - name (required): Package name
+#   - state (default: present): present, absent, latest
+#   - version: Specific version to install
+#   - global (default: false): Install globally
+#   - path: Working directory for local installs
+#   - production (default: false): Install only production dependencies
+
+name: Yarn Module Test
+description: Test and demonstrate the yarn module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  # Test 1: Install package globally
+  - name: Install lodash globally
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: present
+      global: true
+
+  # Test 2: Install specific version globally
+  - name: Install specific version of prettier
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: prettier
+      version: "2.8.0"
+      global: true
+
+  # Test 3: Install package locally (requires package.json)
+  - name: Install express locally
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: express
+      state: present
+      path: /tmp/test-project
+
+  # Test 4: Install from package.json
+  - name: Install all dependencies
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: ""
+      state: present
+      path: /tmp/test-project
+
+  # Test 5: Install production dependencies only
+  - name: Install production dependencies
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: ""
+      state: present
+      path: /tmp/test-project
+      production: true
+
+  # Test 6: Update package to latest
+  - name: Update lodash to latest
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: latest
+      global: true
+
+  # Test 7: Remove global package
+  - name: Remove prettier globally
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: prettier
+      state: absent
+      global: true
+
+  # Test 8: Remove local package
+  - name: Remove express locally
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: express
+      state: absent
+      path: /tmp/test-project

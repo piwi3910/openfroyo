@@ -1,0 +1,58 @@
+# Package Module Test
+#
+# This module manages packages across different package managers.
+# Supports: apt, dnf, yum, pacman, brew, choco, winget
+#
+# Usage:
+#   froyo apply modules/generic/package/test.ofy
+#
+# Variables:
+#   - name (required): Package name to manage
+#   - state (required): Desired state (present, absent, latest)
+#   - update_cache (optional): Whether to update package cache first (default: no)
+#
+# Examples in this test:
+#   1. Install a package (curl)
+#   2. Update package cache and install latest version
+#   3. Upgrade a package to latest
+#   4. Remove a package
+
+name: Package Module Test
+description: Test and demonstrate the package module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Install curl package
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: curl
+      state: present
+
+  - name: Update cache and install vim
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: vim
+      state: present
+      update_cache: yes
+
+  - name: Upgrade wget to latest
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: wget
+      state: latest
+
+  - name: Remove htop package
+    module: generic/package
+    hosts:
+      - test-host
+    vars:
+      name: htop
+      state: absent

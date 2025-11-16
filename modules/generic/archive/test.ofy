@@ -1,0 +1,45 @@
+stack:
+  name: Test Archive Module
+  description: Test cases for the archive module
+
+inventory:
+  - localhost
+
+defaults:
+  connection: local
+
+run:
+  - name: Create gzip archive (default)
+    module: archive
+    vars:
+      path: /var/log/myapp
+      dest: /tmp/backups/myapp-logs.tar.gz
+
+  - name: Create bzip2 archive
+    module: archive
+    vars:
+      path: /etc/myapp
+      dest: /tmp/backups/myapp-config.tar.bz2
+      format: bz2
+
+  - name: Create xz archive
+    module: archive
+    vars:
+      path: /opt/data
+      dest: /tmp/backups/data.tar.xz
+      format: xz
+
+  - name: Create zip archive
+    module: archive
+    vars:
+      path: /home/user/documents
+      dest: /tmp/backups/documents.zip
+      format: zip
+
+  - name: Archive and remove originals
+    module: archive
+    vars:
+      path: /tmp/temp-files
+      dest: /tmp/temp-backup.tar.gz
+      format: gz
+      remove: true

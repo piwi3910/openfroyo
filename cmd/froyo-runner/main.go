@@ -92,6 +92,14 @@ func main() {
 	}
 }
 
+// registerHostFunctions registers custom host functions for WASM modules
+func registerHostFunctions(ctx context.Context, r wazero.Runtime) error {
+	// For now, we don't register host functions
+	// WASM modules will use file-based communication for privileged operations
+	// This is simpler than managing WASM<->host memory and works well for MVP
+	return nil
+}
+
 func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 	ctx := context.Background()
 
@@ -101,6 +109,15 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 
 	// Instantiate WASI, which provides host functions for I/O, env vars, etc.
 	wasi_snapshot_preview1.Instantiate(ctx, r)
+
+	// Register custom host functions (currently a no-op, reserved for future use)
+	if err := registerHostFunctions(ctx, r); err != nil {
+		return TaskOutput{
+			Status:  "failed",
+			Message: fmt.Sprintf("Failed to register host functions: %v", err),
+			Facts:   make(map[string]interface{}),
+		}
+	}
 
 	// Create stdin with input JSON
 	inputJSON, _ := json.Marshal(input)
@@ -116,7 +133,7 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 		WithStderr(&stderr).
 		WithSysNanosleep().
 		WithSysWalltime().
-		WithFS(os.DirFS("/")).  // Grant access to root filesystem for command execution
+		WithFS(os.DirFS("/")).  // Grant access to root filesystem
 		WithEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
 
 	// Instantiate the module
@@ -140,313 +157,109 @@ func executeWASM(wasmBytes []byte, input TaskInput) TaskOutput {
 		}
 	}
 
-	// Check if the module wants us to execute a command
-	if execCmdInterface, exists := output.Facts["exec_command"]; exists {
-		if execCmd, ok := execCmdInterface.(string); ok && execCmd != "" {
-			output = executeCommand(output, execCmd)
-		}
-	}
-
-	// Check if the module wants us to manage packages
-	if pkgCmdInterface, exists := output.Facts["package_command"]; exists {
-		if pkgCmd, ok := pkgCmdInterface.(string); ok && pkgCmd != "" {
-			output = executePackageCommand(output, pkgCmd)
-		}
-	}
-
-	// Check if the module wants us to execute a script
-	if scriptCmdInterface, exists := output.Facts["script_command"]; exists {
-		if scriptCmd, ok := scriptCmdInterface.(string); ok && scriptCmd != "" {
-			// Get script details from facts
-			scriptPath, _ := output.Facts["script_path"].(string)
-			scriptContent, _ := output.Facts["script_content"].(string)
-			output = executeScript(output, scriptPath, scriptContent, scriptCmd)
+	// Generic command execution - check for shell_exec fact
+	if execCmds, exists := output.Facts["shell_exec"]; exists {
+		if cmdList, ok := execCmds.([]interface{}); ok {
+			output = executeShellCommands(output, cmdList)
 		}
 	}
 
 	return output
 }
 
-func executeCommand(output TaskOutput, execCmd string) TaskOutput {
+// executeShellCommands executes a list of shell commands
+// This is a generic handler that works for all module types
+func executeShellCommands(output TaskOutput, cmdList []interface{}) TaskOutput {
+	for _, cmdInterface := range cmdList {
+		cmdMap, ok := cmdInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		cmdType, _ := cmdMap["type"].(string)
+
+		switch cmdType {
+		case "shell":
+			// Execute a simple shell command
+			command, _ := cmdMap["command"].(string)
+			result := execShellCommand(command)
+			if result["exit_code"].(int) != 0 {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Command failed: %s", command)
+				output.Facts["error"] = result["stderr"]
+			} else {
+				if output.Status != "changed" {
+					output.Status = "ok"
+				}
+				if output.Message == "" {
+					output.Message = fmt.Sprintf("Command executed: %s", command)
+				}
+			}
+			output.Facts["stdout"] = result["stdout"]
+
+		case "file_write":
+			// Write a file
+			path, _ := cmdMap["path"].(string)
+			content, _ := cmdMap["content"].(string)
+			mode, _ := cmdMap["mode"].(float64)
+
+			dir := filepath.Dir(path)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Failed to create directory: %v", err)
+				output.Facts["error"] = err.Error()
+				return output
+			}
+
+			if err := os.WriteFile(path, []byte(content), os.FileMode(mode)); err != nil {
+				output.Status = "failed"
+				output.Message = fmt.Sprintf("Failed to write file: %v", err)
+				output.Facts["error"] = err.Error()
+				return output
+			}
+		}
+	}
+
+	// Clean up the shell_exec fact
+	delete(output.Facts, "shell_exec")
+
+	return output
+}
+
+// execShellCommand executes a single shell command and returns results
+func execShellCommand(command string) map[string]interface{} {
 	var cmd *exec.Cmd
 
 	// Platform-specific command execution
 	if os.Getenv("OS") != "" && strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
-		// Windows: use cmd.exe /c for command execution
-		cmd = exec.Command("cmd.exe", "/c", execCmd)
+		cmd = exec.Command("cmd.exe", "/c", command)
 	} else {
-		// Unix-like (Linux, macOS, FreeBSD): parse and execute directly
-		parts := strings.Fields(execCmd)
-		if len(parts) > 0 {
-			cmd = exec.Command(parts[0], parts[1:]...)
-		}
+		cmd = exec.Command("sh", "-c", command)
 	}
 
-	if cmd != nil {
-		cmdOutput, cmdErr := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
+	exitCode := 0
+	stderr := ""
 
-		if cmdErr != nil {
-			output.Status = "failed"
-			output.Message = fmt.Sprintf("Command failed: %v", cmdErr)
-			output.Facts["stdout"] = string(cmdOutput)
-			output.Facts["error"] = cmdErr.Error()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
 		} else {
-			output.Status = "ok"
-			output.Message = fmt.Sprintf("Command executed successfully: %s", execCmd)
-			output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
+			exitCode = 1
 		}
-		delete(output.Facts, "exec_command")
+		stderr = err.Error()
 	}
 
-	return output
-}
-
-func executePackageCommand(output TaskOutput, pkgCmd string) TaskOutput {
-	commands := strings.Split(pkgCmd, ";")
-
-	var packageManager string
-	var packageName string
-	var results []string
-
-	for _, cmdDirective := range commands {
-		cmdDirective = strings.TrimSpace(cmdDirective)
-
-		if cmdDirective == "detect_pkg_mgr" {
-			// Detect available package manager
-			pkgMgr := detectPackageManager()
-			if pkgMgr == "" {
-				output.Status = "failed"
-				output.Message = "No supported package manager found"
-				delete(output.Facts, "package_command")
-				return output
-			}
-			packageManager = pkgMgr
-			results = append(results, fmt.Sprintf("Detected package manager: %s", pkgMgr))
-			continue
-		}
-
-		if cmdDirective == "update_cache" {
-			// Update package cache
-			updateCmd := getUpdateCacheCommand(packageManager)
-			if updateCmd != "" {
-				cmd := exec.Command("sh", "-c", updateCmd)
-				cmdOutput, _ := cmd.CombinedOutput()
-				results = append(results, fmt.Sprintf("Updated package cache: %s", strings.TrimSpace(string(cmdOutput))))
-			}
-			continue
-		}
-
-		// Handle install/remove/upgrade commands
-		if strings.HasPrefix(cmdDirective, "install:") {
-			packageName = strings.TrimPrefix(cmdDirective, "install:")
-			installCmd := getInstallCommand(packageManager, packageName)
-			cmd := exec.Command("sh", "-c", installCmd)
-			cmdOutput, cmdErr := cmd.CombinedOutput()
-
-			if cmdErr != nil {
-				output.Status = "failed"
-				output.Message = fmt.Sprintf("Failed to install %s: %v", packageName, cmdErr)
-				output.Facts["error"] = cmdErr.Error()
-			} else {
-				output.Status = "ok"
-				output.Message = fmt.Sprintf("Package %s installed successfully", packageName)
-				results = append(results, string(cmdOutput))
-			}
-		} else if strings.HasPrefix(cmdDirective, "remove:") {
-			packageName = strings.TrimPrefix(cmdDirective, "remove:")
-			removeCmd := getRemoveCommand(packageManager, packageName)
-			cmd := exec.Command("sh", "-c", removeCmd)
-			cmdOutput, cmdErr := cmd.CombinedOutput()
-
-			if cmdErr != nil {
-				output.Status = "failed"
-				output.Message = fmt.Sprintf("Failed to remove %s: %v", packageName, cmdErr)
-				output.Facts["error"] = cmdErr.Error()
-			} else {
-				output.Status = "ok"
-				output.Message = fmt.Sprintf("Package %s removed successfully", packageName)
-				results = append(results, string(cmdOutput))
-			}
-		} else if strings.HasPrefix(cmdDirective, "upgrade:") {
-			packageName = strings.TrimPrefix(cmdDirective, "upgrade:")
-			upgradeCmd := getUpgradeCommand(packageManager, packageName)
-			cmd := exec.Command("sh", "-c", upgradeCmd)
-			cmdOutput, cmdErr := cmd.CombinedOutput()
-
-			if cmdErr != nil {
-				output.Status = "failed"
-				output.Message = fmt.Sprintf("Failed to upgrade %s: %v", packageName, cmdErr)
-				output.Facts["error"] = cmdErr.Error()
-			} else {
-				output.Status = "ok"
-				output.Message = fmt.Sprintf("Package %s upgraded successfully", packageName)
-				results = append(results, string(cmdOutput))
-			}
-		}
-	}
-
-	output.Facts["package_manager"] = packageManager
-	output.Facts["package_name"] = packageName
-	output.Facts["stdout"] = strings.Join(results, "\n")
-	delete(output.Facts, "package_command")
-
-	return output
-}
-
-func detectPackageManager() string {
-	managers := []struct {
-		name  string
-		check string
-	}{
-		{"apt", "which apt-get"},
-		{"dnf", "which dnf"},
-		{"yum", "which yum"},
-		{"pacman", "which pacman"},
-		{"brew", "which brew"},
-		{"choco", "where choco"},
-		{"winget", "where winget"},
-	}
-
-	for _, mgr := range managers {
-		cmd := exec.Command("sh", "-c", mgr.check)
-		if err := cmd.Run(); err == nil {
-			return mgr.name
-		}
-	}
-
-	return ""
-}
-
-func getUpdateCacheCommand(pkgMgr string) string {
-	switch pkgMgr {
-	case "apt":
-		return "sudo apt-get update"
-	case "dnf":
-		return "sudo dnf check-update || true"
-	case "yum":
-		return "sudo yum check-update || true"
-	case "pacman":
-		return "sudo pacman -Sy"
-	case "brew":
-		return "brew update"
-	default:
-		return ""
-	}
-}
-
-func getInstallCommand(pkgMgr, packageName string) string {
-	switch pkgMgr {
-	case "apt":
-		return fmt.Sprintf("sudo apt-get install -y %s", packageName)
-	case "dnf":
-		return fmt.Sprintf("sudo dnf install -y %s", packageName)
-	case "yum":
-		return fmt.Sprintf("sudo yum install -y %s", packageName)
-	case "pacman":
-		return fmt.Sprintf("sudo pacman -S --noconfirm %s", packageName)
-	case "brew":
-		return fmt.Sprintf("brew install %s", packageName)
-	case "choco":
-		return fmt.Sprintf("choco install -y %s", packageName)
-	case "winget":
-		return fmt.Sprintf("winget install --silent %s", packageName)
-	default:
-		return ""
-	}
-}
-
-func getRemoveCommand(pkgMgr, packageName string) string {
-	switch pkgMgr {
-	case "apt":
-		return fmt.Sprintf("sudo apt-get remove -y %s", packageName)
-	case "dnf":
-		return fmt.Sprintf("sudo dnf remove -y %s", packageName)
-	case "yum":
-		return fmt.Sprintf("sudo yum remove -y %s", packageName)
-	case "pacman":
-		return fmt.Sprintf("sudo pacman -R --noconfirm %s", packageName)
-	case "brew":
-		return fmt.Sprintf("brew uninstall %s", packageName)
-	case "choco":
-		return fmt.Sprintf("choco uninstall -y %s", packageName)
-	case "winget":
-		return fmt.Sprintf("winget uninstall --silent %s", packageName)
-	default:
-		return ""
-	}
-}
-
-func getUpgradeCommand(pkgMgr, packageName string) string {
-	switch pkgMgr {
-	case "apt":
-		return fmt.Sprintf("sudo apt-get install --only-upgrade -y %s", packageName)
-	case "dnf":
-		return fmt.Sprintf("sudo dnf upgrade -y %s", packageName)
-	case "yum":
-		return fmt.Sprintf("sudo yum upgrade -y %s", packageName)
-	case "pacman":
-		return fmt.Sprintf("sudo pacman -S --noconfirm %s", packageName)
-	case "brew":
-		return fmt.Sprintf("brew upgrade %s", packageName)
-	case "choco":
-		return fmt.Sprintf("choco upgrade -y %s", packageName)
-	case "winget":
-		return fmt.Sprintf("winget upgrade --silent %s", packageName)
-	default:
-		return ""
+	return map[string]interface{}{
+		"stdout":    strings.TrimSpace(string(output)),
+		"stderr":    stderr,
+		"exit_code": exitCode,
 	}
 }
 
 func printOutput(output TaskOutput) {
 	outputJSON, _ := json.MarshalIndent(output, "", "  ")
 	fmt.Println(string(outputJSON))
-}
-
-func executeScript(output TaskOutput, scriptPath, scriptContent, scriptCmd string) TaskOutput {
-	// Create script directory
-	scriptDir := filepath.Dir(scriptPath)
-	if err := os.MkdirAll(scriptDir, 0755); err != nil {
-		output.Status = "failed"
-		output.Message = fmt.Sprintf("Failed to create script directory: %v", err)
-		output.Facts["error"] = err.Error()
-		return output
-	}
-
-	// Write script content to file
-	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
-		output.Status = "failed"
-		output.Message = fmt.Sprintf("Failed to write script file: %v", err)
-		output.Facts["error"] = err.Error()
-		return output
-	}
-
-	// Execute the script
-	parts := strings.Fields(scriptCmd)
-	var cmd *exec.Cmd
-	if len(parts) > 1 {
-		cmd = exec.Command(parts[0], parts[1:]...)
-	} else {
-		cmd = exec.Command(parts[0])
-	}
-
-	cmdOutput, cmdErr := cmd.CombinedOutput()
-
-	if cmdErr != nil {
-		output.Status = "failed"
-		output.Message = fmt.Sprintf("Script execution failed: %v", cmdErr)
-		output.Facts["stdout"] = string(cmdOutput)
-		output.Facts["error"] = cmdErr.Error()
-	} else {
-		output.Status = "ok"
-		output.Message = fmt.Sprintf("Script executed successfully: %s", scriptPath)
-		output.Facts["stdout"] = strings.TrimSpace(string(cmdOutput))
-	}
-
-	// Clean up script facts that were just for execution
-	delete(output.Facts, "script_command")
-	delete(output.Facts, "script_content")
-
-	return output
 }
 
 // hostExec is called by WASM modules to execute shell commands

@@ -1,0 +1,26 @@
+name: Read CSV Module
+description: Read CSV file and return contents as structured data
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the CSV file to read
+
+  - name: key
+    type: string
+    required: false
+    description: Column name to use as dictionary key (returns dict instead of array)
+
+  - name: delimiter
+    type: string
+    required: false
+    default: ","
+    description: Field delimiter character
+
+  - name: skipinitialspace
+    type: boolean
+    required: false
+    default: false
+    description: Skip whitespace after delimiter

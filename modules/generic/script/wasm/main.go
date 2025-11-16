@@ -42,7 +42,7 @@ func main() {
 		return
 	}
 
-	// Get script content (base64 encoded) and args
+	// Get script content (base64 encoded) from executor
 	scriptContentB64, ok := input.Vars["_script_content"].(string)
 	if !ok || scriptContentB64 == "" {
 		output := TaskOutput{
@@ -52,16 +52,6 @@ func main() {
 		}
 		printOutput(output)
 		return
-	}
-
-	args, _ := input.Vars["args"].(string)
-
-	// Get original script name for better debugging
-	scriptName, ok := input.Vars["script"].(string)
-	if !ok || scriptName == "" {
-		scriptName = "script.sh"
-	} else {
-		scriptName = filepath.Base(scriptName)
 	}
 
 	// Decode script content
@@ -76,32 +66,45 @@ func main() {
 		return
 	}
 
-	// Create remote script path
+	// Get script path for filename
+	scriptPath, ok := input.Vars["script"].(string)
+	if !ok || scriptPath == "" {
+		scriptPath = "script.sh"
+	}
+
+	args, _ := input.Vars["args"].(string)
+	scriptName := filepath.Base(scriptPath)
 	remotePath := fmt.Sprintf("/tmp/froyo/scripts/%s", scriptName)
 
-	// Return facts to tell froyo-runner to:
-	// 1. Create the script file
-	// 2. Make it executable
-	// 3. Execute it
+	// Build the execution command
+	execCmd := remotePath
+	if args != "" {
+		execCmd = fmt.Sprintf("%s %s", remotePath, args)
+	}
+
+	// Return shell_exec fact to:
+	// 1. Write the script file
+	// 2. Execute it
 	result := TaskOutput{
 		Status:  "ok",
-		Message: fmt.Sprintf("Script prepared: %s", scriptName),
+		Message: "", // Will be set by the handler
 		Facts: map[string]interface{}{
-			"script_path":    remotePath,
-			"script_content": string(scriptContent),
-			"script_args":    args,
-			"script_command": buildScriptCommand(remotePath, args),
+			"shell_exec": []map[string]interface{}{
+				{
+					"type":    "file_write",
+					"path":    remotePath,
+					"content": string(scriptContent),
+					"mode":    0755, // executable
+				},
+				{
+					"type":    "shell",
+					"command": execCmd,
+				},
+			},
 		},
 	}
 
 	printOutput(result)
-}
-
-func buildScriptCommand(scriptPath, args string) string {
-	if args != "" {
-		return fmt.Sprintf("%s %s", scriptPath, args)
-	}
-	return scriptPath
 }
 
 func printOutput(output TaskOutput) {

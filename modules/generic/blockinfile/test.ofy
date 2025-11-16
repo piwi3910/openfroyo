@@ -1,0 +1,144 @@
+# BlockInFile Module Test
+#
+# This module inserts, updates, or removes text blocks in files
+#
+# Usage:
+#   froyo apply modules/generic/blockinfile/test.ofy
+#
+# Variables:
+#   - path (required): Path to the file to modify
+#   - block: Text content to insert/update
+#   - marker: Custom marker template with {mark} placeholder
+#   - marker_begin: Custom begin marker
+#   - marker_end: Custom end marker
+#   - insertafter: Insert after this regex pattern
+#   - insertbefore: Insert before this regex pattern
+#   - state: present or absent (default: present)
+#   - create: Create file if it doesn't exist
+#   - backup: Create backup before modification
+
+name: BlockInFile Module Test
+description: Test and demonstrate the blockinfile module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      state: file
+
+  - name: Add initial content to test file
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: |
+        cat > /tmp/froyo-blockinfile-test.txt <<'EOF'
+        # This is a test configuration file
+        server {
+            listen 80;
+        }
+        # End of file
+        EOF
+
+  - name: Insert block at end with default markers
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      block: |
+        # Custom configuration
+        proxy_timeout 30s;
+        max_connections 100;
+
+  - name: Insert block after specific pattern
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      marker_begin: "# BEGIN SSL CONFIG"
+      marker_end: "# END SSL CONFIG"
+      insertafter: "listen 80;"
+      block: |
+        ssl on;
+        ssl_certificate /etc/ssl/cert.pem;
+        ssl_certificate_key /etc/ssl/key.pem;
+
+  - name: Insert block before specific pattern
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      marker_begin: "# BEGIN LOGGING"
+      marker_end: "# END LOGGING"
+      insertbefore: "# End of file"
+      block: |
+        access_log /var/log/access.log;
+        error_log /var/log/error.log;
+
+  - name: Update existing block
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      marker_begin: "# BEGIN MANAGED BLOCK"
+      marker_end: "# END MANAGED BLOCK"
+      block: |
+        # Updated custom configuration
+        proxy_timeout 60s;
+        max_connections 200;
+        keepalive_timeout 65;
+
+  - name: Create new file with block
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-new.txt
+      create: true
+      marker: "# {mark} ANSIBLE MANAGED"
+      block: |
+        export PATH=/usr/local/bin:$PATH
+        export EDITOR=vim
+
+  - name: Remove a block
+    module: generic/blockinfile
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      marker_begin: "# BEGIN SSL CONFIG"
+      marker_end: "# END SSL CONFIG"
+      state: absent
+
+  - name: Display final file content
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/froyo-blockinfile-test.txt
+
+  - name: Clean up test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-test.txt
+      state: absent
+
+  - name: Clean up new file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-blockinfile-new.txt
+      state: absent

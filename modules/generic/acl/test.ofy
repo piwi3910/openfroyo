@@ -1,0 +1,91 @@
+# ACL Module Test
+#
+# This module manages file Access Control Lists (ACLs)
+#
+# Usage:
+#   froyo apply modules/generic/acl/test.ofy
+#
+# Variables:
+#   - path (required): Path to the file/directory
+#   - entity: User or group name
+#   - etype: Entity type (user, group, mask, other) - default: user
+#   - permissions: Permissions in rwx format or octal
+#   - state: present or absent (default: present)
+#   - recursive: Apply recursively (default: false)
+
+name: ACL Module Test
+description: Test and demonstrate the ACL module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test directory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test
+      state: directory
+      mode: "0755"
+
+  - name: Create test file
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test/test.txt
+      state: file
+      mode: "0644"
+
+  - name: Add ACL for user with read/write permissions
+    module: generic/acl
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test/test.txt
+      entity: openfroyo
+      etype: user
+      permissions: rw-
+      state: present
+
+  - name: Add ACL for group with read-only permissions
+    module: generic/acl
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test/test.txt
+      entity: staff
+      etype: group
+      permissions: r--
+      state: present
+
+  - name: Apply ACL recursively to directory
+    module: generic/acl
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test
+      entity: openfroyo
+      etype: user
+      permissions: rwx
+      state: present
+      recursive: true
+
+  - name: Remove ACL for user
+    module: generic/acl
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test/test.txt
+      entity: openfroyo
+      etype: user
+      state: absent
+
+  - name: Cleanup test directory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-acl-test
+      state: absent

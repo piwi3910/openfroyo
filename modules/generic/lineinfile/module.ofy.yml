@@ -1,0 +1,47 @@
+name: Line in File Module
+description: Manage lines in text files - add, remove, or replace lines
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the file to manage
+
+  - name: line
+    type: string
+    required: false
+    description: Text of the line to ensure exists in the file
+
+  - name: regexp
+    type: string
+    required: false
+    description: Regular expression pattern to match lines (for replacement or removal)
+
+  - name: state
+    type: string
+    required: false
+    default: present
+    description: "Whether the line should be present or absent"
+
+  - name: insertafter
+    type: string
+    required: false
+    description: "Insert line after this regexp pattern (use 'EOF' for end of file)"
+
+  - name: insertbefore
+    type: string
+    required: false
+    description: Insert line before this regexp pattern (use 'BOF' for beginning of file)
+
+  - name: backup
+    type: boolean
+    required: false
+    default: false
+    description: Create a backup of the file before modification
+
+  - name: create
+    type: boolean
+    required: false
+    default: false
+    description: Create the file if it does not exist

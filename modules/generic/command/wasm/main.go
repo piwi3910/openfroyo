@@ -60,13 +60,18 @@ func main() {
 		return
 	}
 
-	// For MVP: Return the command to be executed by the host
+	// Return shell_exec fact for the generic handler
 	// (WASM can't execute processes, so we tell the host what to run)
 	result := TaskOutput{
 		Status:  "ok",
-		Message: fmt.Sprintf("Command prepared: %s", cmdStr),
+		Message: "", // Will be set by the handler
 		Facts: map[string]interface{}{
-			"exec_command": cmdStr,  // Tell the host to execute this
+			"shell_exec": []map[string]interface{}{
+				{
+					"type":    "shell",
+					"command": cmdStr,
+				},
+			},
 		},
 	}
 	printOutput(result)

@@ -1,0 +1,41 @@
+name: File Management Module
+description: Manage files, directories, permissions, and ownership
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the file or directory to manage
+
+  - name: state
+    type: string
+    required: false
+    default: file
+    description: "Desired state: file, directory, link, absent, touch"
+
+  - name: mode
+    type: string
+    required: false
+    description: File permissions in octal (e.g., '0644', '0755')
+
+  - name: owner
+    type: string
+    required: false
+    description: Owner of the file/directory
+
+  - name: group
+    type: string
+    required: false
+    description: Group owner of the file/directory
+
+  - name: src
+    type: string
+    required: false
+    description: Source path for symlinks (required when state=link)
+
+  - name: recurse
+    type: boolean
+    required: false
+    default: false
+    description: Recursively set permissions/ownership for directories

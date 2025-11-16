@@ -1,0 +1,36 @@
+name: Test Copy Module
+description: Test stack for the copy module
+version: 1.0.0
+
+inventory:
+  - localhost
+
+defaults:
+  ansible_connection: local
+
+run:
+  - name: Copy test file to remote
+    module: generic/copy
+    hosts:
+      - localhost
+    vars:
+      src: /tmp/openfroyo_test_source.txt
+      dest: /tmp/openfroyo_test_dest.txt
+
+  - name: Copy file with permissions
+    module: generic/copy
+    hosts:
+      - localhost
+    vars:
+      src: /tmp/openfroyo_test_source.txt
+      dest: /tmp/openfroyo_test_perms.txt
+      mode: "0600"
+
+  - name: Copy file with backup
+    module: generic/copy
+    hosts:
+      - localhost
+    vars:
+      src: /tmp/openfroyo_test_source.txt
+      dest: /tmp/openfroyo_test_backup.txt
+      backup: true

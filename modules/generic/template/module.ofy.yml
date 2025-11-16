@@ -1,0 +1,40 @@
+name: Template Module
+description: Template files using variable substitution
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Source template file path on local machine
+
+  - name: dest
+    type: string
+    required: true
+    description: Destination path on remote host
+
+  - name: mode
+    type: string
+    required: false
+    description: Permissions for the destination file in octal (e.g., '0644')
+
+  - name: owner
+    type: string
+    required: false
+    description: Owner of the destination file
+
+  - name: group
+    type: string
+    required: false
+    description: Group owner of the destination file
+
+  - name: backup
+    type: boolean
+    required: false
+    default: false
+    description: Create backup of destination file if it exists
+
+  - name: validate
+    type: string
+    required: false
+    description: Command to validate file before replacing (use %s for temp file path)

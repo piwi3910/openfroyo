@@ -1,0 +1,37 @@
+name: ACL Management Module
+description: Manage file Access Control Lists (ACLs)
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the file or directory to manage ACLs
+
+  - name: entity
+    type: string
+    required: false
+    description: User or group name for the ACL entry
+
+  - name: etype
+    type: string
+    required: false
+    default: user
+    description: "Entity type: user, group, mask, or other"
+
+  - name: permissions
+    type: string
+    required: false
+    description: Permissions in rwx format (e.g., 'rwx', 'r-x') or octal (e.g., '7', '5')
+
+  - name: state
+    type: string
+    required: false
+    default: present
+    description: "Desired state: present or absent"
+
+  - name: recursive
+    type: boolean
+    required: false
+    default: false
+    description: Apply ACL recursively to directories

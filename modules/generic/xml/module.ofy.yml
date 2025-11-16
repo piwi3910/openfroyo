@@ -1,0 +1,42 @@
+name: XML Management Module
+description: Manage XML files using XPath expressions
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Path to the XML file to manage
+
+  - name: xpath
+    type: string
+    required: true
+    description: XPath expression to select nodes
+
+  - name: value
+    type: string
+    required: false
+    description: Value to set for the selected nodes (required for state=present with element/text operations)
+
+  - name: attribute
+    type: string
+    required: false
+    description: Attribute name to set (use with value parameter)
+
+  - name: state
+    type: string
+    required: false
+    default: present
+    description: "Desired state: present or absent"
+
+  - name: pretty_print
+    type: boolean
+    required: false
+    default: false
+    description: Pretty print the XML output
+
+  - name: count
+    type: boolean
+    required: false
+    default: false
+    description: Count matching nodes instead of modifying

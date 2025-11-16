@@ -1,0 +1,21 @@
+server {
+    listen {{port}};
+    server_name {{server_name}};
+
+    root {{document_root}};
+    index index.html index.htm;
+
+    access_log {{log_dir}}/access.log;
+    error_log {{log_dir}}/error.log;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Maximum upload size
+    client_max_body_size {{max_upload_size}};
+
+    # Enable gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+}

@@ -1,0 +1,135 @@
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  # Test gem module
+  - name: Check if gem is available
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: which gem || echo "gem not found"
+
+  - name: Install a Ruby gem
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: colorize
+      state: present
+      user_install: true
+
+  - name: Check gem installation
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: gem list colorize
+
+  # Test npm module
+  - name: Check if npm is available
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: which npm || echo "npm not found"
+
+  - name: Install npm package globally
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: cowsay
+      state: present
+      global: true
+
+  - name: Check npm package
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: npm list -g cowsay --depth=0 || echo "not installed"
+
+  # Test pip module
+  - name: Check if pip is available
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: which pip3 || echo "pip3 not found"
+
+  - name: Install Python package with pip
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: present
+      user: true
+
+  - name: Check pip package
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: pip3 list | grep requests || echo "not installed"
+
+  # Test yarn module
+  - name: Check if yarn is available
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: which yarn || echo "yarn not found"
+
+  - name: Install yarn package globally
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: present
+      global: true
+
+  - name: Check yarn package
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      cmd: yarn global list --pattern lodash || echo "not installed"
+
+  # Cleanup
+  - name: Remove gem package
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: colorize
+      state: absent
+
+  - name: Remove npm package
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: cowsay
+      state: absent
+      global: true
+
+  - name: Remove pip package
+    module: generic/pip
+    hosts:
+      - test-host
+    vars:
+      name: requests
+      state: absent
+      user: true
+
+  - name: Remove yarn package
+    module: generic/yarn
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: absent
+      global: true

@@ -1,0 +1,100 @@
+# NPM Module Test
+#
+# This module manages Node.js packages using npm package manager.
+#
+# Usage:
+#   froyo apply modules/generic/npm/test.ofy
+#
+# Variables:
+#   - name (required): Package name to manage
+#   - state (required): Desired state (present, absent, latest)
+#   - version (optional): Specific version to install
+#   - global (optional): Install globally (default: false)
+#   - path (optional): Path to package.json directory for local installs
+#   - production (optional): Install only production dependencies (default: false)
+#
+# Examples in this test:
+#   1. Install a package globally (express)
+#   2. Install a specific version locally (lodash 4.17.21)
+#   3. Install production dependencies in a path
+#   4. Update to latest version
+#   5. Remove a package
+
+name: NPM Module Test
+description: Test and demonstrate the npm module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Install express globally
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: express
+      state: present
+      global: true
+
+  - name: Install specific version of lodash locally
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: present
+      version: "4.17.21"
+
+  - name: Install chalk globally with specific version
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: chalk
+      state: present
+      version: "4.1.2"
+      global: true
+
+  - name: Install dependencies in project directory
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: react
+      state: present
+      path: "/var/www/myapp"
+
+  - name: Install production dependencies only
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: axios
+      state: present
+      production: true
+
+  - name: Update package to latest
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: express
+      state: latest
+      global: true
+
+  - name: Remove package globally
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: chalk
+      state: absent
+      global: true
+
+  - name: Remove package locally
+    module: generic/npm
+    hosts:
+      - test-host
+    vars:
+      name: lodash
+      state: absent

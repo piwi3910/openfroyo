@@ -1,0 +1,48 @@
+# Script Module Test
+#
+# This module copies local scripts to remote hosts and executes them.
+# The script is transferred securely and executed with the specified arguments.
+#
+# Usage:
+#   froyo apply modules/generic/script/test.ofy
+#
+# Variables:
+#   - script (required): Path to local script file to execute
+#   - args (optional): Arguments to pass to the script
+#
+# Examples in this test:
+#   1. Execute script without arguments
+#   2. Execute script with single argument
+#   3. Execute script with multiple arguments including quoted strings
+#
+# Note: Make sure the example script exists before running this test
+
+name: Script Module Test
+description: Test and demonstrate the script module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Run hello script without arguments
+    module: generic/script
+    hosts:
+      - test-host
+    vars:
+      script: examples/scripts/hello.sh
+
+  - name: Run hello script with single argument
+    module: generic/script
+    hosts:
+      - test-host
+    vars:
+      script: examples/scripts/hello.sh
+      args: production
+
+  - name: Run hello script with multiple arguments
+    module: generic/script
+    hosts:
+      - test-host
+    vars:
+      script: examples/scripts/hello.sh
+      args: arg1 arg2 "argument with spaces"

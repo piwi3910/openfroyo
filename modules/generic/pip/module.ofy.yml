@@ -1,0 +1,16 @@
+name: pip
+version: 1.0.0
+description: Manage Python packages using pip
+
+steps:
+  - name: Manage pip package
+    wasm: wasm/pip.wasm
+    vars:
+      name: "{{ var.name }}"
+      state: "{{ var.state | default('present') }}"
+      version: "{{ var.version | default('') }}"
+      requirements: "{{ var.requirements | default('') }}"
+      virtualenv: "{{ var.virtualenv | default('') }}"
+      extra_args: "{{ var.extra_args | default('') }}"
+      executable: "{{ var.executable | default('pip3') }}"
+      user: "{{ var.user | default(false) }}"

@@ -1,0 +1,127 @@
+# Assemble Module Test
+#
+# This module assembles configuration files from fragments
+#
+# Usage:
+#   froyo apply modules/generic/assemble/test.ofy
+#
+# Variables:
+#   - src (required): Directory with fragments
+#   - dest (required): Destination file path
+#   - delimiter: Text to insert between fragments (default: "")
+#   - regexp: Only include files matching regex (default: "")
+#   - ignore_hidden: Ignore files starting with . (default: true)
+
+name: Assemble Module Test
+description: Test and demonstrate the assemble module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Create test directory for fragments
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-fragments
+      state: directory
+
+  - name: Create fragment 1
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "# Fragment 1\nserver {\n  listen 80;" > /tmp/froyo-fragments/01-server.conf
+
+  - name: Create fragment 2
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "  server_name example.com;\n  root /var/www;" > /tmp/froyo-fragments/02-config.conf
+
+  - name: Create fragment 3
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "  location / {\n    try_files $uri $uri/ =404;\n  }\n}" > /tmp/froyo-fragments/03-location.conf
+
+  - name: Create hidden file (should be ignored)
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "# This should not appear" > /tmp/froyo-fragments/.hidden.conf
+
+  - name: Assemble all fragments into single config
+    module: generic/assemble
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/froyo-fragments
+      dest: /tmp/nginx.conf
+      ignore_hidden: true
+
+  - name: Display assembled config
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/nginx.conf
+
+  - name: Create script fragments directory
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/script-parts
+      state: directory
+
+  - name: Create script header
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "#!/bin/bash\n# Auto-generated script" > /tmp/script-parts/00-header.sh
+
+  - name: Create script function
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "function setup() {\n  echo 'Setting up...'\n}" > /tmp/script-parts/10-functions.sh
+
+  - name: Create script main
+    module: generic/command
+    hosts:
+      - test-host
+    vars:
+      command: echo "setup\necho 'Done!'" > /tmp/script-parts/20-main.sh
+
+  - name: Assemble script with delimiters
+    module: generic/assemble
+    hosts:
+      - test-host
+    vars:
+      src: /tmp/script-parts
+      dest: /tmp/deploy.sh
+      delimiter: "\n# ---\n"
+      regexp: ".*\\.sh$"
+
+  - name: Make script executable
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/deploy.sh
+      mode: "0755"
+
+  - name: Clean up test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: /tmp/froyo-fragments
+      state: absent

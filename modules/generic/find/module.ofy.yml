@@ -1,0 +1,53 @@
+name: Find Files Module
+description: Search for files and directories matching criteria
+version: 1.0.0
+
+variables:
+  - name: path
+    type: string
+    required: true
+    description: Directory path to search in
+
+  - name: patterns
+    type: string
+    required: false
+    description: File name patterns to match (shell glob, e.g., '*.txt' or '*.log')
+
+  - name: file_type
+    type: string
+    required: false
+    default: any
+    description: "Type of files to find: file, directory, link, or any"
+
+  - name: age
+    type: string
+    required: false
+    description: "Find files by age: +N (older than N days), -N (newer than N days)"
+
+  - name: age_stamp
+    type: string
+    required: false
+    default: mtime
+    description: "Age stamp to check: mtime (modified), atime (accessed), ctime (changed)"
+
+  - name: size
+    type: string
+    required: false
+    description: "Find files by size: +N (larger than), -N (smaller than), N (exact). Units: c(bytes), k(KB), M(MB), G(GB)"
+
+  - name: recurse
+    type: boolean
+    required: false
+    default: true
+    description: Recursively search subdirectories
+
+  - name: hidden
+    type: boolean
+    required: false
+    default: false
+    description: Include hidden files (starting with .)
+
+  - name: depth
+    type: string
+    required: false
+    description: "Maximum depth to search (e.g., '2' for two levels deep)"

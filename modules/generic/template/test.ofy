@@ -1,0 +1,133 @@
+# Template Module Test
+#
+# This module renders template files with variable substitution
+#
+# Usage:
+#   froyo apply modules/generic/template/test.ofy
+#
+# Variables:
+#   - src (required): Source template file on local machine
+#   - dest (required): Destination path on remote host
+#   - mode: File permissions in octal
+#   - owner: File owner
+#   - group: File group
+#   - backup: Create backup before replacing
+#   - validate: Command to validate rendered template
+#
+# Template Syntax:
+#   Use {{variable_name}} or {{ variable_name }} for substitution
+
+name: Template Module Test
+description: Test and demonstrate the template module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Deploy nginx configuration from template
+    module: generic/template
+    hosts:
+      - test-host
+    vars:
+      src: modules/generic/template/templates/nginx.conf.j2
+      dest: /tmp/froyo-nginx.conf
+      mode: "0644"
+      port: "8080"
+      server_name: "example.com"
+      document_root: "/var/www/html"
+      log_dir: "/var/log/nginx"
+      max_upload_size: "10M"
+
+  - name: Deploy application environment file
+    module: generic/template
+    hosts:
+      - test-host
+    vars:
+      src: modules/generic/template/templates/app.env.j2
+      dest: /tmp/froyo-app.env
+      mode: "0600"
+      owner: "appuser"
+      group: "appgroup"
+      app_name: "MyApplication"
+      app_env: "production"
+      app_debug: "false"
+      db_host: "localhost"
+      db_port: "5432"
+      db_name: "myapp_db"
+      db_user: "myapp_user"
+      cache_driver: "redis"
+      cache_prefix: "myapp"
+      log_level: "info"
+      log_path: "/var/log/myapp"
+
+  - name: Deploy systemd service file
+    module: generic/template
+    hosts:
+      - test-host
+    vars:
+      src: modules/generic/template/templates/systemd.service.j2
+      dest: /tmp/froyo-myapp.service
+      mode: "0644"
+      service_description: "My Application Service"
+      service_type: "simple"
+      service_user: "appuser"
+      service_group: "appgroup"
+      working_directory: "/opt/myapp"
+      exec_start: "/opt/myapp/bin/myapp"
+      restart_policy: "always"
+      restart_sec: "10"
+      validate: "systemd-analyze verify %s"
+
+  - name: Display rendered nginx config
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/froyo-nginx.conf
+
+  - name: Display rendered app environment
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/froyo-app.env
+
+  - name: Display rendered systemd service
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: cat /tmp/froyo-myapp.service
+
+  - name: Update template with backup
+    module: generic/template
+    hosts:
+      - test-host
+    vars:
+      src: modules/generic/template/templates/nginx.conf.j2
+      dest: /tmp/froyo-nginx.conf
+      backup: true
+      port: "9090"
+      server_name: "updated.example.com"
+      document_root: "/var/www/updated"
+      log_dir: "/var/log/nginx"
+      max_upload_size: "50M"
+
+  - name: Clean up test files
+    module: generic/file
+    hosts:
+      - test-host
+    vars:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - /tmp/froyo-nginx.conf
+      - /tmp/froyo-app.env
+      - /tmp/froyo-myapp.service
+
+  - name: Clean up backup files
+    module: generic/shell
+    hosts:
+      - test-host
+    vars:
+      command: rm -f /tmp/froyo-nginx.conf.bak.*

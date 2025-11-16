@@ -1,0 +1,70 @@
+# Gem Module Test
+#
+# This module manages Ruby gems using RubyGems package manager.
+#
+# Usage:
+#   froyo apply modules/generic/gem/test.ofy
+#
+# Variables:
+#   - name (required): Gem name to manage
+#   - state (required): Desired state (present, absent, latest)
+#   - version (optional): Specific version to install
+#   - user_install (optional): Install in user's home directory (default: true)
+#   - source (optional): Gem repository URL
+#   - install_dir (optional): Installation directory
+#
+# Examples in this test:
+#   1. Install a gem (bundler)
+#   2. Install a specific version (rake 13.0.0)
+#   3. Install from a custom source
+#   4. Update to latest version
+#   5. Remove a gem
+
+name: Gem Module Test
+description: Test and demonstrate the gem module
+
+inventory:
+  - examples/inventory/hosts.yml
+
+run:
+  - name: Install bundler gem
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: bundler
+      state: present
+
+  - name: Install specific version of rake
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: rake
+      state: present
+      version: "13.0.0"
+
+  - name: Install gem with user install disabled
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: json
+      state: present
+      user_install: false
+
+  - name: Update gem to latest
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: bundler
+      state: latest
+
+  - name: Remove gem
+    module: generic/gem
+    hosts:
+      - test-host
+    vars:
+      name: rake
+      state: absent

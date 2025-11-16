@@ -1,0 +1,4 @@
+delete: false
+recursive: true
+archive: true
+checksum: false

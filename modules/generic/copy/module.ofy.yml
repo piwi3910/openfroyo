@@ -1,0 +1,35 @@
+name: Copy Module
+description: Copy files to remote locations
+version: 1.0.0
+
+variables:
+  - name: src
+    type: string
+    required: true
+    description: Source file path on local machine
+
+  - name: dest
+    type: string
+    required: true
+    description: Destination path on remote host
+
+  - name: mode
+    type: string
+    required: false
+    description: Permissions for the destination file
+
+  - name: owner
+    type: string
+    required: false
+    description: Owner of the destination file
+
+  - name: group
+    type: string
+    required: false
+    description: Group of the destination file
+
+  - name: backup
+    type: boolean
+    required: false
+    default: false
+    description: Create a backup of dest file if it exists
