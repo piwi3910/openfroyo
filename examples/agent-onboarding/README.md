@@ -1,66 +1,68 @@
-# Agent Onboarding Example
+# Agent Onboarding
 
-This example demonstrates how to convert SSH-based (push mode) servers to pull-mode agent-based servers in OpenFroyo.
+This example demonstrates how to onboard servers to OpenFroyo pull mode by installing and configuring the froyo-agent.
 
 ## Overview
 
-This onboarding stack performs the following steps:
+Agent onboarding converts servers from push mode (agentless/SSH) to pull mode (agent-based). This process:
 
-1. **Create Service Account** - Creates `froyo` user and group for agent
-2. **Create Directories** - Sets up required directories for agent operation
-3. **Download Agent Binary** - Downloads froyo-agent from GitHub releases
-4. **Configure Agent** - Generates agent configuration file with NATS connection
-5. **Install Systemd Unit** - Creates systemd service file for agent
-6. **Enable and Start** - Enables and starts the froyo-agent service
-7. **Verify Operation** - Checks that agent is running and connected to NATS
+1. ✅ Creates froyo user and group
+2. ✅ Downloads froyo-agent and froyo-runner binaries
+3. ✅ Configures NATS connection
+4. ✅ Creates systemd service
+5. ✅ Starts and enables the agent
 
 ## Prerequisites
 
-- OpenFroyo CLI installed and configured
-- SSH access to target servers (root or sudo)
+- OpenFroyo CLI installed on your workstation
 - NATS server deployed and accessible
-- Internet access on target servers (to download agent binary)
+- SSH access to target servers
+- Root or sudo access on target servers
 
 ## Quick Start
 
-### 1. Update Inventory
+### 1. Deploy NATS Server (If Not Already Done)
 
-Edit `onboard-agent.ofy` and update the inventory section:
-
-```yaml
-inventory:
-  hosts:
-    - name: web-01
-      ssh_host: 192.168.1.10  # Your server IP
-      ssh_user: root
-    - name: web-02
-      ssh_host: 192.168.1.11  # Your server IP
-      ssh_user: root
+```bash
+cd ../nats-deployment
+# Update inventory.yml with your NATS server IP
+froyo apply systemd-stack.ofy
 ```
 
-### 2. Update Variables
+### 2. Update Inventory
 
-Edit the defaults section to match your environment:
+Edit `inventory.yml` and update with your server IPs:
+
+```yaml
+hosts:
+  web-01:
+    ssh_host: 192.168.1.10  # Your server IP
+    ssh_user: root
+  web-02:
+    ssh_host: 192.168.1.11  # Your server IP
+    ssh_user: root
+```
+
+### 3. Configure NATS Connection
+
+Edit `onboard-agent.ofy` defaults section:
 
 ```yaml
 defaults:
-  agent_version: "1.0.0"  # Agent version to install
-  agent_url: "https://github.com/piwi3910/openfroyo/releases/download/v{{ agent_version }}/froyo-agent-linux-amd64"
-  agent_checksum: "sha256:..."  # SHA256 checksum of agent binary
-  nats_server: "nats://nats.openfroyo.example.com:4222"  # Your NATS server
-  datacenter: "dc1"  # Datacenter identifier
+  nats_server: "nats://192.168.1.50:4222"  # Your NATS server
+  datacenter: "dc1"
+  agent_version: "1.0.0"
 ```
 
-### 3. Run the Onboarding Stack
+### 4. Run Onboarding
 
 ```bash
-# From OpenFroyo root directory
-froyo apply examples/agent-onboarding/onboard-agent.ofy
+froyo apply onboard-agent.ofy
 ```
 
-### 4. Verify Agent is Running
+### 5. Verify Agents
 
-SSH to one of the servers and check:
+SSH to each server and check:
 
 ```bash
 # Check service status
@@ -69,8 +71,10 @@ systemctl status froyo-agent
 # Check logs
 journalctl -u froyo-agent -f
 
-# Verify NATS connection
-journalctl -u froyo-agent | grep "connected to nats"
+# Should see:
+# "Connected to NATS: nats://192.168.1.50:4222"
+# "Subscribed to: openfroyo.dc1.agents.web-01.tasks"
+# "Health monitoring enabled"
 ```
 
 ## Architecture
@@ -300,25 +304,23 @@ After onboarding agents:
 
 ## Example: Hybrid Deployment
 
-You can run both SSH and agent modes simultaneously:
+You can run both push mode and pull mode simultaneously:
 
 ```yaml
 inventory:
   hosts:
-    # SSH-based servers (legacy or special cases)
-    - name: legacy-01
+    # Push mode servers (SSH-based)
+    - name: admin-server
       ssh_host: 10.0.1.10
       ssh_user: root
       mode: ssh
 
-    # Agent-based servers
+    # Pull mode servers (agent-based)
     - name: web-01
       mode: agent
       datacenter: dc1
 
-    # Auto-detect mode
     - name: web-02
-      ssh_host: 10.0.2.20
-      ssh_user: root
-      # Will use agent if froyo-agent is running, otherwise SSH
+      mode: agent
+      datacenter: dc1
 ```
