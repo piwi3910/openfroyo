@@ -1,13 +1,13 @@
-# Agent Mode Example
+# Hybrid Mode Example
 
-This example demonstrates OpenFroyo's hybrid execution mode, where you can mix SSH-based (push mode) and agent-based (pull mode) hosts in the same stack.
+This example demonstrates OpenFroyo's hybrid execution mode, where you can mix push mode (SSH-based) and pull mode (agent-based) hosts in the same stack.
 
 ## Overview
 
 OpenFroyo supports two execution modes:
 
-1. **SSH Mode (Push)**: Traditional approach where the orchestrator connects to hosts via SSH
-2. **Agent Mode (Pull)**: Modern approach where agents connect to NATS message queue and pull tasks
+1. **Push Mode**: Orchestrator pushes tasks to hosts via SSH (agentless)
+2. **Pull Mode**: Agents pull tasks from NATS message queue (agent-based)
 
 Both modes can coexist in the same deployment!
 
@@ -18,27 +18,27 @@ Both modes can coexist in the same deployment!
 
 ## Prerequisites
 
-### For SSH Mode Hosts
+### For Push Mode Hosts
 - SSH access to target hosts
 - SSH key or password authentication
 
-### For Agent Mode Hosts
+### For Pull Mode Hosts
 - NATS server running and accessible
 - froyo-agent installed and running on target hosts
 - Agent configuration with correct datacenter and agent_id
 
 ## Inventory Configuration
 
-### SSH Mode Host
+### Push Mode Host
 ```yaml
-legacy-server:
+admin-server:
   mode: ssh
   ssh_host: 192.168.1.100
   ssh_user: root
   ssh_key_file: ~/.ssh/id_rsa
 ```
 
-### Agent Mode Host
+### Pull Mode Host
 ```yaml
 web-01:
   mode: agent
@@ -81,17 +81,17 @@ sudo systemctl start froyo-agent
 ### 3. Update Inventory
 
 Edit `inventory.yml` to match your environment:
-- For SSH hosts: Update IP addresses, usernames, credentials
-- For agent hosts: Update agent_id and datacenter to match running agents
+- For push mode hosts: Update IP addresses, usernames, credentials
+- For pull mode hosts: Update agent_id and datacenter to match running agents
 
 ### 4. Execute the Stack
 
-#### With only SSH hosts:
+#### With only push mode hosts:
 ```bash
 froyo apply hybrid-stack.ofy
 ```
 
-#### With agent mode hosts:
+#### With pull mode hosts:
 ```bash
 froyo apply hybrid-stack.ofy --nats-server nats://localhost:4222
 ```
@@ -107,17 +107,17 @@ froyo apply hybrid-stack.ofy \
 
 When you run the stack:
 
-1. **SSH Hosts**: Orchestrator connects via SSH and executes modules directly
-2. **Agent Hosts**: Orchestrator publishes task messages to NATS, agents pull and execute
+1. **Push Mode Hosts**: Orchestrator connects via SSH and executes modules directly
+2. **Pull Mode Hosts**: Orchestrator publishes task messages to NATS, agents pull and execute
 
 The output will show the execution mode for each host:
 
 ```
-[1/4] Create file on SSH host
-  → legacy-server (192.168.1.100) [SSH]
+[1/4] Create file on push mode host
+  → admin-server (192.168.1.100) [SSH]
     ✓ changed: File created
 
-[2/4] Create file on agent hosts
+[2/4] Create file on pull mode hosts
   → web-01 (agent: web-01) [AGENT]
     ✓ changed: File created
   → web-02 (agent: web-02) [AGENT]
@@ -126,18 +126,19 @@ The output will show the execution mode for each host:
 
 ## Benefits of Hybrid Mode
 
-### When to Use SSH Mode
-- Legacy infrastructure without agent support
+### When to Use Push Mode
+- Direct control with immediate SSH execution
 - One-off tasks on rarely managed hosts
 - Hosts that cannot run agents (embedded systems, etc.)
 - Initial bootstrapping before installing agents
+- Small deployments (< 50 hosts)
 
-### When to Use Agent Mode
+### When to Use Pull Mode
 - Large-scale deployments (100+ hosts)
 - Continuous compliance and drift detection
 - Reduced load on orchestrator
 - Multi-datacenter deployments
-- Hosts behind firewalls (agents can call out)
+- Hosts behind firewalls (agents call out, no inbound SSH)
 
 ## Multi-Datacenter Setup
 
@@ -167,21 +168,21 @@ NATS super cluster handles routing messages to the correct datacenter automatica
 │  (Orchestrator)  │
 └────┬────────┬────┘
      │        │
-SSH  │        │ NATS
-     │        │
+Push │        │ Pull (NATS)
+(SSH)│        │
      │    ┌───▼──────────┐
      │    │ NATS Server  │
      │    └───┬──────────┘
      │        │
      │   ┌────▼────┐  ┌─────────┐
      │   │ web-01  │  │ web-02  │
-     │   │ (agent) │  │ (agent) │
+     │   │ (pull)  │  │ (pull)  │
      │   └─────────┘  └─────────┘
      │
-  ┌──▼─────────────┐  ┌────────────────┐
-  │ legacy-server  │  │   db-server    │
-  │   (SSH mode)   │  │   (SSH mode)   │
-  └────────────────┘  └────────────────┘
+  ┌──▼──────────────┐  ┌────────────────┐
+  │  admin-server   │  │   db-server    │
+  │    (push)       │  │    (push)      │
+  └─────────────────┘  └────────────────┘
 ```
 
 ## Troubleshooting
@@ -199,7 +200,7 @@ SSH  │        │ NATS
 - Ensure agent can connect to NATS server
 - Check firewall rules for NATS port (4222)
 
-### Tasks execute on SSH but not agents
+### Tasks execute on push mode but not pull mode hosts
 - Verify agents are subscribed to correct NATS subjects
 - Check datacenter and agent_id match between inventory and agent config
 - Review NATS logs for connection issues

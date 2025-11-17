@@ -1,28 +1,28 @@
 ---
-# Example inventory demonstrating hybrid mode (SSH + Agent)
+# Example inventory demonstrating hybrid mode (Push + Pull)
 
 hosts:
-  # SSH mode host (traditional push-based)
-  legacy-server:
+  # Push mode host (SSH-based execution)
+  admin-server:
     mode: ssh
     ssh_host: 192.168.1.100
     ssh_port: 22
     ssh_user: root
     ssh_key_file: ~/.ssh/id_rsa
 
-  # Agent mode host (pull-based with NATS)
+  # Pull mode host (agent-based with NATS)
   web-01:
     mode: agent
     agent_id: web-01
     datacenter: dc1
 
-  # Agent mode host in different datacenter
+  # Pull mode host in different datacenter
   web-02:
     mode: agent
     agent_id: web-02
     datacenter: dc2
 
-  # Another SSH host
+  # Another push mode host
   db-server:
     mode: ssh
     ssh_host: 192.168.1.101

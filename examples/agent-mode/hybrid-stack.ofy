@@ -8,28 +8,28 @@ defaults:
   message: "Hello from OpenFroyo!"
 
 run:
-  # Task 1: Execute on SSH host (legacy-server)
-  - name: Create file on SSH host
+  # Task 1: Execute on push mode host (admin-server)
+  - name: Create file on push mode host
     module: generic/file
     hosts:
-      - legacy-server
+      - admin-server
     vars:
-      path: /tmp/openfroyo-ssh.txt
+      path: /tmp/openfroyo-push.txt
       state: touch
       mode: '0644'
 
-  # Task 2: Execute on agent-based hosts (web-01, web-02)
-  - name: Create file on agent hosts
+  # Task 2: Execute on pull mode hosts (web-01, web-02)
+  - name: Create file on pull mode hosts
     module: generic/file
     hosts:
       - web-01
       - web-02
     vars:
-      path: /tmp/openfroyo-agent.txt
+      path: /tmp/openfroyo-pull.txt
       state: touch
       mode: '0644'
 
-  # Task 3: Execute on all webservers (both agent hosts)
+  # Task 3: Execute on all webservers (both pull mode hosts)
   - name: Install nginx on webservers
     module: linux/package
     hosts:
@@ -38,11 +38,11 @@ run:
       name: nginx
       state: present
 
-  # Task 4: Mixed execution (SSH + agent)
+  # Task 4: Hybrid execution (push + pull modes)
   - name: Check system info on all hosts
     module: generic/command
     hosts:
-      - legacy-server
+      - admin-server
       - web-01
       - web-02
       - db-server
