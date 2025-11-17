@@ -9,21 +9,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/piwi3910/openfroyo/internal/agent/config"
+	"github.com/piwi3910/openfroyo/internal/agent/registry"
 	"github.com/piwi3910/openfroyo/internal/protocol"
 )
 
 // Executor manages task execution
 type Executor struct {
-	config      *config.Config
-	logger      *log.Logger
-	semaphore   chan struct{}
-	activeTasks sync.Map
-	stats       ExecutionStats
-	statsMutex  sync.RWMutex
+	config         *config.Config
+	logger         *log.Logger
+	semaphore      chan struct{}
+	activeTasks    sync.Map
+	stats          ExecutionStats
+	statsMutex     sync.RWMutex
+	registryClient *registry.Client
 }
 
 // ExecutionStats tracks execution statistics
@@ -46,10 +49,34 @@ func NewExecutor(cfg *config.Config, logger *log.Logger) (*Executor, error) {
 		return nil, fmt.Errorf("failed to create module cache directory: %w", err)
 	}
 
+	// Create registry client if registry is configured
+	var registryClient *registry.Client
+	if cfg.Execution.ModuleRegistryURL != "" {
+		regCfg := registry.Config{
+			BaseURL:  cfg.Execution.ModuleRegistryURL,
+			APIKey:   cfg.Execution.ModuleRegistryAPIKey,
+			CacheDir: cfg.Execution.ModuleCache,
+		}
+
+		var err error
+		registryClient, err = registry.NewClient(regCfg, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create registry client: %w", err)
+		}
+
+		// Test registry connectivity
+		if err := registryClient.Health(); err != nil {
+			logger.Printf("[WARN] Registry health check failed: %v", err)
+		} else {
+			logger.Printf("[INFO] Connected to module registry: %s", cfg.Execution.ModuleRegistryURL)
+		}
+	}
+
 	return &Executor{
-		config:    cfg,
-		logger:    logger,
-		semaphore: make(chan struct{}, cfg.Execution.MaxConcurrent),
+		config:         cfg,
+		logger:         logger,
+		semaphore:      make(chan struct{}, cfg.Execution.MaxConcurrent),
+		registryClient: registryClient,
 	}, nil
 }
 
@@ -214,15 +241,22 @@ func (e *Executor) executeCommand(task *protocol.TaskMessage) (*protocol.TaskRes
 
 // getModulePath returns the path to a WASM module (from cache or downloads it)
 func (e *Executor) getModulePath(module string) (string, error) {
-	// For now, assume modules are in a standard location
-	// In a real implementation, this would download modules if not cached
-	modulePath := filepath.Join(e.config.Execution.ModuleCache, module+".wasm")
+	// If registry client is configured, use it to get the module
+	if e.registryClient != nil {
+		modulePath, err := e.registryClient.GetModule(module)
+		if err != nil {
+			return "", fmt.Errorf("failed to get module from registry: %w", err)
+		}
+		return modulePath, nil
+	}
+
+	// Fallback: Check local cache
+	filename := strings.ReplaceAll(module, "/", "-") + ".wasm"
+	modulePath := filepath.Join(e.config.Execution.ModuleCache, filename)
 
 	// Check if module exists
 	if _, err := os.Stat(modulePath); err != nil {
-		// Module doesn't exist - would need to download it
-		// For now, return an error
-		return "", fmt.Errorf("module not found in cache: %s (would need to implement download)", module)
+		return "", fmt.Errorf("module not found in cache: %s (no registry configured)", module)
 	}
 
 	return modulePath, nil

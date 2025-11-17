@@ -167,6 +167,11 @@ run:
           default_timeout: 300
           temp_dir: /tmp/froyo
 
+          # Module Registry (optional)
+          # Uncomment to enable automatic module downloads from registry
+          # module_registry_url: "http://192.168.1.60:8080"
+          # module_registry_api_key: ""  # Optional API key
+
         health:
           # Health monitoring
           enabled: true

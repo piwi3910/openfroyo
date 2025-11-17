@@ -41,11 +41,13 @@ type ConnectionConfig struct {
 
 // ExecutionConfig contains task execution settings
 type ExecutionConfig struct {
-	WorkDir        string        `yaml:"work_dir"`        // Working directory for execution
-	ModuleCache    string        `yaml:"module_cache"`    // Module cache directory
-	MaxConcurrent  int           `yaml:"max_concurrent"`  // Max concurrent tasks
-	TaskTimeout    time.Duration `yaml:"task_timeout"`    // Default task timeout
-	RunnerPath     string        `yaml:"runner_path"`     // Path to froyo-runner binary
+	WorkDir              string        `yaml:"work_dir"`                // Working directory for execution
+	ModuleCache          string        `yaml:"module_cache"`            // Module cache directory
+	MaxConcurrent        int           `yaml:"max_concurrent"`          // Max concurrent tasks
+	TaskTimeout          time.Duration `yaml:"task_timeout"`            // Default task timeout
+	RunnerPath           string        `yaml:"runner_path"`             // Path to froyo-runner binary
+	ModuleRegistryURL    string        `yaml:"module_registry_url"`     // Module registry URL (optional)
+	ModuleRegistryAPIKey string        `yaml:"module_registry_api_key"` // Module registry API key (optional)
 }
 
 // LoggingConfig contains logging settings

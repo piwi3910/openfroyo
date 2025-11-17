@@ -1,0 +1,250 @@
+name: Deploy Module Registry (Systemd)
+description: Deploy OpenFroyo module registry as systemd service
+
+inventory:
+  - inventory.yml
+
+defaults:
+  registry_version: "1.0.0"
+  registry_user: froyo-registry
+  registry_group: froyo-registry
+  registry_install_dir: /usr/local/bin
+  registry_config_dir: /etc/froyo-registry
+  registry_data_dir: /var/lib/froyo-registry
+  registry_log_dir: /var/log/froyo-registry
+  registry_port: 8080
+
+  # Download URL (GitHub releases)
+  registry_download_base: "https://github.com/piwi3910/openfroyo/releases/download"
+
+run:
+  # Step 1: Create froyo-registry user and group
+  - name: Create froyo-registry group
+    module: linux/group
+    hosts:
+      - registry-server
+    vars:
+      name: "{{ registry_group }}"
+      state: present
+      system: true
+
+  - name: Create froyo-registry user
+    module: linux/user
+    hosts:
+      - registry-server
+    vars:
+      name: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+      system: true
+      create_home: false
+      shell: /bin/false
+      comment: "OpenFroyo Module Registry Service Account"
+
+  # Step 2: Create directories
+  - name: Create registry config directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_config_dir }}"
+      state: directory
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: Create registry data directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+
+  - name: Create modules directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}/modules"
+      state: directory
+      mode: '0755'
+      owner: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+
+  - name: Create registry log directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_log_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+
+  # Step 3: Download froyo-registry binary
+  - name: Download froyo-registry binary
+    module: generic/get_url
+    hosts:
+      - registry-server
+    vars:
+      url: "{{ registry_download_base }}/v{{ registry_version }}/froyo-registry-linux-amd64"
+      dest: "{{ registry_install_dir }}/froyo-registry"
+      mode: '0755'
+      owner: root
+      group: root
+
+  # Step 4: Create registry configuration file
+  - name: Create registry configuration
+    module: generic/copy
+    hosts:
+      - registry-server
+    vars:
+      dest: "{{ registry_config_dir }}/registry.yml"
+      mode: '0644'
+      owner: root
+      group: root
+      content: |
+        # OpenFroyo Module Registry Configuration
+
+        server:
+          listen: "0.0.0.0:{{ registry_port }}"
+          read_timeout: 30s
+          write_timeout: 30s
+          max_header_bytes: 1048576  # 1MB
+          enable_cors: true
+          enable_metrics: true
+          enable_healthz: true
+
+        storage:
+          modules_dir: "{{ registry_data_dir }}/modules"
+          checksums_file: "{{ registry_data_dir }}/checksums.yml"
+          metadata_file: "{{ registry_data_dir }}/metadata.yml"
+          enable_cache: true
+          cache_ttl: 3600
+
+        auth:
+          enabled: false
+          type: "none"
+          # To enable authentication, uncomment and configure:
+          # enabled: true
+          # type: "api_key"
+          # api_keys:
+          #   - "your-secret-api-key-1"
+          #   - "your-secret-api-key-2"
+
+        logging:
+          level: "info"
+          format: "text"
+          access_log: true
+          file: "{{ registry_log_dir }}/registry.log"
+
+  # Step 5: Create systemd service file
+  - name: Create froyo-registry systemd service
+    module: generic/copy
+    hosts:
+      - registry-server
+    vars:
+      dest: /etc/systemd/system/froyo-registry.service
+      mode: '0644'
+      owner: root
+      group: root
+      content: |
+        [Unit]
+        Description=OpenFroyo Module Registry
+        Documentation=https://github.com/piwi3910/openfroyo
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=simple
+        User={{ registry_user }}
+        Group={{ registry_group }}
+
+        # Start registry
+        ExecStart={{ registry_install_dir }}/froyo-registry --config {{ registry_config_dir }}/registry.yml
+
+        # Restart configuration
+        Restart=always
+        RestartSec=5s
+
+        # Security hardening
+        NoNewPrivileges=true
+        PrivateTmp=true
+        ProtectSystem=strict
+        ProtectHome=true
+        ReadWritePaths={{ registry_data_dir }} {{ registry_log_dir }}
+
+        # Resource limits
+        LimitNOFILE=65536
+        LimitNPROC=4096
+
+        # Logging
+        StandardOutput=journal
+        StandardError=journal
+        SyslogIdentifier=froyo-registry
+
+        [Install]
+        WantedBy=multi-user.target
+
+  # Step 6: Enable and start froyo-registry service
+  - name: Enable and start froyo-registry
+    module: generic/service
+    hosts:
+      - registry-server
+    vars:
+      name: froyo-registry
+      state: started
+      enabled: true
+      daemon_reload: true
+      sleep: 3
+
+  # Step 7: Verify registry is running
+  - name: Check froyo-registry status
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: systemctl status froyo-registry --no-pager
+
+  # Step 8: Test registry HTTP endpoint
+  - name: Test registry health endpoint
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: curl -f http://localhost:{{ registry_port }}/healthz
+
+  # Step 9: Display registry information
+  - name: Show registry information
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: |
+        echo "================================================"
+        echo "OpenFroyo Module Registry Deployed Successfully!"
+        echo "================================================"
+        echo "Registry URL: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}"
+        echo "Health: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}/healthz"
+        echo "Metrics: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}/metrics"
+        echo "Version: {{ registry_version }}"
+        echo ""
+        echo "Service Commands:"
+        echo "  systemctl status froyo-registry"
+        echo "  systemctl stop froyo-registry"
+        echo "  systemctl start froyo-registry"
+        echo "  systemctl restart froyo-registry"
+        echo ""
+        echo "Logs:"
+        echo "  journalctl -u froyo-registry -f"
+        echo "  tail -f {{ registry_log_dir }}/registry.log"
+        echo ""
+        echo "Config: {{ registry_config_dir }}/registry.yml"
+        echo "Modules: {{ registry_data_dir }}/modules"
+        echo ""
+        echo "Upload modules to: {{ registry_data_dir }}/modules/"
+        echo "================================================"
