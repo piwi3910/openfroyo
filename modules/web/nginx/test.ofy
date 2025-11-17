@@ -1,0 +1,504 @@
+---
+# Nginx Module Test Suite
+# This file demonstrates all 35+ commands with practical examples
+
+name: Nginx Module Test Suite
+description: Comprehensive test of all Nginx module operations
+inventory: localhost
+
+defaults:
+  test_domain: test.example.com
+  test_root: /var/www/test
+  test_backend: 127.0.0.1:3000
+
+run:
+  # ==========================================================================
+  # TEST 1: Service Status Check
+  # ==========================================================================
+  - name: Check Nginx service status
+    module: web/nginx
+    vars:
+      command: check_service_status
+
+  # ==========================================================================
+  # TEST 2: Basic Server Block Creation
+  # ==========================================================================
+  - name: Create basic test server block
+    module: web/nginx
+    vars:
+      command: create_server_block
+      server_name: "{{ var.test_domain }}"
+      server_file: test-basic.conf
+      root: "{{ var.test_root }}"
+      index: index.html index.htm
+
+  - name: Test configuration after basic server creation
+    module: web/nginx
+    vars:
+      command: test_server_config
+
+  # ==========================================================================
+  # TEST 3: Server Block Management
+  # ==========================================================================
+  - name: List all server blocks
+    module: web/nginx
+    vars:
+      command: list_server_blocks
+
+  - name: Enable test server block
+    module: web/nginx
+    vars:
+      command: enable_server_block
+      server_file: test-basic.conf
+
+  - name: Disable test server block
+    module: web/nginx
+    vars:
+      command: disable_server_block
+      server_file: test-basic.conf
+
+  # ==========================================================================
+  # TEST 4: Upstream Creation and Management
+  # ==========================================================================
+  - name: Create test upstream with round-robin
+    module: web/nginx
+    vars:
+      command: create_upstream
+      upstream_name: test_backend
+      upstream_servers:
+        - "192.168.1.10:8080"
+        - "192.168.1.11:8080"
+        - "192.168.1.12:8080"
+      load_balance_method: round_robin
+      upstream_keepalive: 32
+
+  - name: Show all upstreams
+    module: web/nginx
+    vars:
+      command: show_upstreams
+
+  - name: Add server to upstream
+    module: web/nginx
+    vars:
+      command: add_upstream_server
+      upstream_name: test_backend
+      upstream_server: "192.168.1.13:8080"
+
+  - name: Change to least connections load balancing
+    module: web/nginx
+    vars:
+      command: set_load_balance_method
+      upstream_name: test_backend
+      load_balance_method: least_conn
+
+  - name: Remove server from upstream
+    module: web/nginx
+    vars:
+      command: remove_upstream_server
+      upstream_name: test_backend
+      upstream_server: "192.168.1.13:8080"
+
+  # ==========================================================================
+  # TEST 5: SSL/TLS Configuration
+  # ==========================================================================
+  - name: Create SSL server block
+    module: web/nginx
+    vars:
+      command: create_ssl_server
+      server_name: ssl.test.example.com
+      server_file: test-ssl.conf
+      ssl_certificate: /etc/ssl/certs/test.crt
+      ssl_certificate_key: /etc/ssl/private/test.key
+      ssl_protocols: "TLSv1.2 TLSv1.3"
+      ssl_ciphers: "HIGH:!aNULL:!MD5"
+      http2: "true"
+      hsts_enabled: "true"
+      root: "{{ var.test_root }}/ssl"
+
+  - name: Verify SSL certificate paths
+    module: web/nginx
+    vars:
+      command: install_ssl_certificate
+      ssl_certificate: /etc/ssl/certs/test.crt
+      ssl_certificate_key: /etc/ssl/private/test.key
+
+  - name: Update SSL protocols
+    module: web/nginx
+    vars:
+      command: set_ssl_protocols
+      server_file: test-ssl.conf
+      ssl_protocols: "TLSv1.3"
+
+  - name: Update SSL ciphers
+    module: web/nginx
+    vars:
+      command: set_ssl_ciphers
+      server_file: test-ssl.conf
+      ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
+
+  - name: Enable HTTP/2 on existing server
+    module: web/nginx
+    vars:
+      command: enable_http2
+      server_file: test-ssl.conf
+
+  - name: Test SSL configuration
+    module: web/nginx
+    vars:
+      command: test_ssl_config
+
+  # ==========================================================================
+  # TEST 6: Location Block Management
+  # ==========================================================================
+  - name: Add basic location block
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-basic.conf
+      location_path: /api/
+      additional_config: |
+        return 200 "API endpoint";
+        add_header Content-Type text/plain;
+
+  - name: Add reverse proxy location
+    module: web/nginx
+    vars:
+      command: add_proxy_pass
+      server_file: test-basic.conf
+      location_path: /app/
+      proxy_pass: http://test_backend
+
+  - name: Add FastCGI location for PHP
+    module: web/nginx
+    vars:
+      command: add_fastcgi_pass
+      server_file: test-basic.conf
+      location_path: ~ \.php$
+      location_modifier: ~
+      fastcgi_pass: unix:/var/run/php/php7.4-fpm.sock
+
+  - name: Add static file location
+    module: web/nginx
+    vars:
+      command: add_static_location
+      server_file: test-basic.conf
+      location_path: /static/
+      try_files: $uri $uri/ =404
+
+  - name: Add rewrite rule for old URLs
+    module: web/nginx
+    vars:
+      command: add_rewrite_rule
+      server_file: test-basic.conf
+      rewrite_regex: "^/old/(.*)$"
+      rewrite_replacement: /new/$1
+      rewrite_flag: permanent
+
+  # ==========================================================================
+  # TEST 7: Configuration Management
+  # ==========================================================================
+  - name: Update server name
+    module: web/nginx
+    vars:
+      command: set_server_name
+      server_file: test-basic.conf
+      server_name: test.example.com www.test.example.com
+
+  - name: Update document root
+    module: web/nginx
+    vars:
+      command: set_root
+      server_file: test-basic.conf
+      root: /var/www/html/test
+
+  - name: Update index files
+    module: web/nginx
+    vars:
+      command: set_index
+      server_file: test-basic.conf
+      index: index.php index.html index.htm
+
+  - name: Add X-Frame-Options security header
+    module: web/nginx
+    vars:
+      command: add_header
+      server_file: test-basic.conf
+      header_name: X-Frame-Options
+      header_value: DENY
+
+  - name: Add X-Content-Type-Options header
+    module: web/nginx
+    vars:
+      command: add_header
+      server_file: test-basic.conf
+      header_name: X-Content-Type-Options
+      header_value: nosniff
+
+  - name: Add custom cache control header
+    module: web/nginx
+    vars:
+      command: add_header
+      server_file: test-basic.conf
+      header_name: Cache-Control
+      header_value: "public, max-age=3600"
+
+  - name: Test complete configuration
+    module: web/nginx
+    vars:
+      command: test_config
+
+  - name: Reload Nginx configuration
+    module: web/nginx
+    vars:
+      command: reload_config
+
+  # ==========================================================================
+  # TEST 8: Performance Tuning
+  # ==========================================================================
+  - name: Set worker processes to auto
+    module: web/nginx
+    vars:
+      command: set_worker_processes
+      worker_processes: auto
+
+  - name: Increase worker connections
+    module: web/nginx
+    vars:
+      command: set_worker_connections
+      worker_connections: 2048
+
+  # ==========================================================================
+  # TEST 9: Service Management
+  # ==========================================================================
+  - name: Restart Nginx service
+    module: web/nginx
+    vars:
+      command: restart_service
+
+  - name: Check service status after restart
+    module: web/nginx
+    vars:
+      command: check_service_status
+
+  # ==========================================================================
+  # TEST 10: Complete Workflow Example - WordPress Site
+  # ==========================================================================
+  - name: Create WordPress server block
+    module: web/nginx
+    vars:
+      command: create_server_block
+      server_name: blog.test.example.com
+      server_file: test-wordpress.conf
+      root: /var/www/wordpress
+      index: index.php index.html
+
+  - name: Add PHP processing for WordPress
+    module: web/nginx
+    vars:
+      command: add_fastcgi_pass
+      server_file: test-wordpress.conf
+      location_path: ~ \.php$
+      location_modifier: ~
+      fastcgi_pass: unix:/var/run/php/php7.4-fpm.sock
+
+  - name: Add WordPress permalink support
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-wordpress.conf
+      location_path: /
+      try_files: $uri $uri/ /index.php?$args
+
+  - name: Block sensitive WordPress files
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-wordpress.conf
+      location_path: ~ /\.ht
+      location_modifier: ~
+      additional_config: |
+        deny all;
+
+  - name: Enable WordPress site
+    module: web/nginx
+    vars:
+      command: enable_server_block
+      server_file: test-wordpress.conf
+
+  # ==========================================================================
+  # TEST 11: Complete Workflow Example - Load Balancer
+  # ==========================================================================
+  - name: Create production upstream
+    module: web/nginx
+    vars:
+      command: create_upstream
+      upstream_name: prod_cluster
+      upstream_servers:
+        - "10.0.1.10:8080"
+        - "10.0.1.11:8080"
+        - "10.0.1.12:8080"
+      load_balance_method: least_conn
+      upstream_keepalive: 64
+
+  - name: Create load balancer server
+    module: web/nginx
+    vars:
+      command: create_server_block
+      server_name: lb.test.example.com
+      server_file: test-loadbalancer.conf
+
+  - name: Configure load balancer proxy
+    module: web/nginx
+    vars:
+      command: add_proxy_pass
+      server_file: test-loadbalancer.conf
+      location_path: /
+      proxy_pass: http://prod_cluster
+
+  - name: Add health check endpoint
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-loadbalancer.conf
+      location_path: /health
+      location_modifier: "="
+      additional_config: |
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+
+  - name: Enable load balancer
+    module: web/nginx
+    vars:
+      command: enable_server_block
+      server_file: test-loadbalancer.conf
+
+  # ==========================================================================
+  # TEST 12: Complete Workflow Example - API Gateway
+  # ==========================================================================
+  - name: Create auth service upstream
+    module: web/nginx
+    vars:
+      command: create_upstream
+      upstream_name: auth_svc
+      upstream_servers:
+        - "10.0.2.10:8001"
+        - "10.0.2.11:8001"
+
+  - name: Create user service upstream
+    module: web/nginx
+    vars:
+      command: create_upstream
+      upstream_name: user_svc
+      upstream_servers:
+        - "10.0.2.20:8002"
+        - "10.0.2.21:8002"
+
+  - name: Create API gateway server
+    module: web/nginx
+    vars:
+      command: create_server_block
+      server_name: api.test.example.com
+      server_file: test-api-gateway.conf
+
+  - name: Route auth endpoints
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-api-gateway.conf
+      location_path: /api/v1/auth/
+      proxy_pass: http://auth_svc
+      additional_config: |
+        rewrite ^/api/v1/auth/(.*)$ /$1 break;
+
+  - name: Route user endpoints
+    module: web/nginx
+    vars:
+      command: add_location_block
+      server_file: test-api-gateway.conf
+      location_path: /api/v1/users/
+      proxy_pass: http://user_svc
+      additional_config: |
+        rewrite ^/api/v1/users/(.*)$ /$1 break;
+
+  - name: Enable API gateway
+    module: web/nginx
+    vars:
+      command: enable_server_block
+      server_file: test-api-gateway.conf
+
+  # ==========================================================================
+  # TEST 13: Configuration Validation and Cleanup
+  # ==========================================================================
+  - name: Final configuration test
+    module: web/nginx
+    vars:
+      command: test_config
+
+  - name: Final reload
+    module: web/nginx
+    vars:
+      command: reload_config
+
+  - name: Final status check
+    module: web/nginx
+    vars:
+      command: check_service_status
+
+  - name: List all configured server blocks
+    module: web/nginx
+    vars:
+      command: list_server_blocks
+
+  - name: Show all configured upstreams
+    module: web/nginx
+    vars:
+      command: show_upstreams
+
+  # ==========================================================================
+  # CLEANUP: Remove test configurations
+  # ==========================================================================
+  - name: Cleanup - Disable test servers
+    module: web/nginx
+    vars:
+      command: disable_server_block
+      server_file: "{{ item }}"
+    loop:
+      - test-basic.conf
+      - test-ssl.conf
+      - test-wordpress.conf
+      - test-loadbalancer.conf
+      - test-api-gateway.conf
+
+  - name: Cleanup - Delete test server blocks
+    module: web/nginx
+    vars:
+      command: delete_server_block
+      server_file: "{{ item }}"
+    loop:
+      - test-basic.conf
+      - test-ssl.conf
+      - test-wordpress.conf
+      - test-loadbalancer.conf
+      - test-api-gateway.conf
+
+  - name: Cleanup - Delete test upstreams
+    module: web/nginx
+    vars:
+      command: delete_upstream
+      upstream_name: "{{ item }}"
+    loop:
+      - test_backend
+      - prod_cluster
+      - auth_svc
+      - user_svc
+
+  - name: Final cleanup test
+    module: web/nginx
+    vars:
+      command: test_config
+
+  - name: Final cleanup reload
+    module: web/nginx
+    vars:
+      command: reload_config

@@ -1,0 +1,362 @@
+# Apache HTTP Server Management Module
+#
+# Comprehensive Apache web server management with 30+ operations
+# Supports both Debian/Ubuntu (apache2) and RHEL/CentOS (httpd)
+
+name: apache
+description: Manage Apache HTTP Server configuration, virtual hosts, modules, and service
+version: 1.0.0
+author: OpenFroyo Team
+
+# Module steps - executed in order
+steps:
+  # Virtual Host Management (6 operations)
+  - name: "Manage Apache virtual hosts"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['create_vhost', 'delete_vhost', 'enable_vhost', 'disable_vhost', 'list_vhosts', 'test_vhost_config']
+    operations:
+      - create_vhost:
+          description: Create a new virtual host configuration
+          required_vars:
+            - vhost_name
+            - document_root
+          optional_vars:
+            - vhost_file
+            - server_name
+            - server_alias
+            - port
+            - server_admin
+            - directory_options
+            - allow_override
+            - require
+            - error_log
+            - access_log
+            - custom_config
+
+      - delete_vhost:
+          description: Delete a virtual host configuration
+          required_vars:
+            - vhost_name
+          optional_vars:
+            - vhost_file
+            - remove_document_root
+
+      - enable_vhost:
+          description: Enable a virtual host (create symlink in sites-enabled)
+          required_vars:
+            - vhost_name
+          optional_vars:
+            - vhost_file
+            - reload_service
+
+      - disable_vhost:
+          description: Disable a virtual host (remove symlink from sites-enabled)
+          required_vars:
+            - vhost_name
+          optional_vars:
+            - vhost_file
+            - reload_service
+
+      - list_vhosts:
+          description: List all virtual hosts (available and enabled)
+          optional_vars:
+            - show_details
+
+      - test_vhost_config:
+          description: Test virtual host configuration syntax
+          required_vars:
+            - vhost_file
+          optional_vars:
+            - verbose
+
+  # Module Management (5 operations)
+  - name: "Manage Apache modules"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['enable_module', 'disable_module', 'list_modules', 'list_available_modules', 'check_module_loaded']
+    operations:
+      - enable_module:
+          description: Enable an Apache module
+          required_vars:
+            - module_name
+          optional_vars:
+            - reload_service
+
+      - disable_module:
+          description: Disable an Apache module
+          required_vars:
+            - module_name
+          optional_vars:
+            - reload_service
+
+      - list_modules:
+          description: List all loaded/enabled modules
+          optional_vars:
+            - format  # text, json
+
+      - list_available_modules:
+          description: List all available modules
+          optional_vars:
+            - format  # text, json
+
+      - check_module_loaded:
+          description: Check if a specific module is loaded
+          required_vars:
+            - module_name
+
+  # SSL/TLS Configuration (5 operations)
+  - name: "Manage Apache SSL/TLS configuration"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['create_ssl_vhost', 'install_ssl_certificate', 'set_ssl_protocols', 'set_ssl_ciphers', 'test_ssl_config']
+    operations:
+      - create_ssl_vhost:
+          description: Create a new SSL/TLS enabled virtual host
+          required_vars:
+            - vhost_name
+            - document_root
+            - ssl_certificate
+            - ssl_certificate_key
+          optional_vars:
+            - vhost_file
+            - server_name
+            - server_alias
+            - ssl_port
+            - ssl_certificate_chain
+            - ssl_protocols
+            - ssl_ciphers
+            - hsts_enabled
+            - redirect_http_to_https
+
+      - install_ssl_certificate:
+          description: Install SSL certificate for existing virtual host
+          required_vars:
+            - vhost_file
+            - ssl_certificate
+            - ssl_certificate_key
+          optional_vars:
+            - ssl_certificate_chain
+
+      - set_ssl_protocols:
+          description: Configure SSL/TLS protocols globally or per vhost
+          required_vars:
+            - ssl_protocols
+          optional_vars:
+            - vhost_file
+            - config_scope  # global, vhost
+
+      - set_ssl_ciphers:
+          description: Configure SSL/TLS cipher suites
+          required_vars:
+            - ssl_ciphers
+          optional_vars:
+            - vhost_file
+            - ssl_prefer_server_ciphers
+            - config_scope  # global, vhost
+
+      - test_ssl_config:
+          description: Test SSL/TLS configuration
+          optional_vars:
+            - vhost_name
+            - check_certificates
+
+  # Configuration Management (6 operations)
+  - name: "Manage Apache configuration"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['set_server_name', 'set_document_root', 'set_directory_options', 'add_directory_block', 'test_config', 'reload_config']
+    operations:
+      - set_server_name:
+          description: Set ServerName directive
+          required_vars:
+            - server_name
+          optional_vars:
+            - vhost_file
+            - config_scope  # global, vhost
+
+      - set_document_root:
+          description: Set DocumentRoot directive
+          required_vars:
+            - document_root
+          optional_vars:
+            - vhost_file
+            - create_directory
+
+      - set_directory_options:
+          description: Configure directory options
+          required_vars:
+            - directory_path
+          optional_vars:
+            - vhost_file
+            - options
+            - allow_override
+            - require
+            - index_options
+
+      - add_directory_block:
+          description: Add a Directory configuration block
+          required_vars:
+            - directory_path
+            - vhost_file
+          optional_vars:
+            - options
+            - allow_override
+            - require
+            - custom_directives
+
+      - test_config:
+          description: Test Apache configuration syntax
+          optional_vars:
+            - verbose
+            - show_vhosts
+
+      - reload_config:
+          description: Reload Apache configuration (graceful restart)
+          optional_vars:
+            - test_first
+
+  # Service Management (4 operations)
+  - name: "Manage Apache service"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['start_service', 'stop_service', 'restart_service', 'check_service_status']
+    operations:
+      - start_service:
+          description: Start Apache service
+          optional_vars:
+            - test_config_first
+
+      - stop_service:
+          description: Stop Apache service
+          optional_vars:
+            - graceful
+
+      - restart_service:
+          description: Restart Apache service
+          optional_vars:
+            - graceful
+            - test_config_first
+
+      - check_service_status:
+          description: Check Apache service status
+          optional_vars:
+            - verbose
+
+  # Performance Tuning (4 operations)
+  - name: "Configure Apache performance settings"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['set_mpm_config', 'set_keepalive', 'set_timeout', 'set_max_clients']
+    operations:
+      - set_mpm_config:
+          description: Configure Multi-Processing Module (MPM) settings
+          required_vars:
+            - mpm_module  # prefork, worker, event
+          optional_vars:
+            - start_servers
+            - min_spare_threads
+            - max_spare_threads
+            - threads_per_child
+            - max_request_workers
+            - max_connections_per_child
+            - config_file
+
+      - set_keepalive:
+          description: Configure KeepAlive settings
+          required_vars:
+            - keep_alive  # On, Off
+          optional_vars:
+            - keep_alive_timeout
+            - max_keep_alive_requests
+            - config_scope  # global, vhost
+            - vhost_file
+
+      - set_timeout:
+          description: Configure timeout settings
+          required_vars:
+            - timeout
+          optional_vars:
+            - request_read_timeout
+            - config_scope  # global, vhost
+
+      - set_max_clients:
+          description: Configure maximum client connections
+          required_vars:
+            - max_clients
+          optional_vars:
+            - mpm_module
+
+  # Additional Operations (5 more for comprehensive coverage)
+  - name: "Additional Apache management operations"
+    wasm: wasm/apache.wasm
+    conditions:
+      - command in ['set_log_level', 'enable_conf', 'disable_conf', 'create_proxy_vhost', 'set_security_headers']
+    operations:
+      - set_log_level:
+          description: Set Apache log level
+          required_vars:
+            - log_level  # debug, info, notice, warn, error, crit, alert, emerg
+          optional_vars:
+            - vhost_file
+            - config_scope  # global, vhost
+
+      - enable_conf:
+          description: Enable a configuration file
+          required_vars:
+            - conf_name
+          optional_vars:
+            - reload_service
+
+      - disable_conf:
+          description: Disable a configuration file
+          required_vars:
+            - conf_name
+          optional_vars:
+            - reload_service
+
+      - create_proxy_vhost:
+          description: Create a reverse proxy virtual host
+          required_vars:
+            - vhost_name
+            - proxy_target
+          optional_vars:
+            - vhost_file
+            - server_name
+            - port
+            - proxy_preserve_host
+            - proxy_timeout
+            - ssl_enabled
+
+      - set_security_headers:
+          description: Configure security headers
+          optional_vars:
+            - vhost_file
+            - x_frame_options
+            - x_content_type_options
+            - x_xss_protection
+            - strict_transport_security
+            - content_security_policy
+            - config_scope  # global, vhost
+
+# Module facts
+# These are discovered/returned by the module
+facts:
+  apache_version: "Apache version string"
+  apache_service_name: "apache2 or httpd"
+  apache_mpm: "Current MPM module (prefork/worker/event)"
+  enabled_modules: "List of enabled modules"
+  enabled_vhosts: "List of enabled virtual hosts"
+  config_test_result: "Configuration test result"
+  service_status: "Service running status"
+  platform: "debian or rhel"
+
+# Tags for categorization
+tags:
+  - web
+  - http
+  - apache
+  - ssl
+  - tls
+  - proxy
+  - performance

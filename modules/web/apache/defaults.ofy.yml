@@ -1,0 +1,96 @@
+# Apache HTTP Server Module - Default Variables
+#
+# These defaults work for Debian/Ubuntu systems.
+# Override for RHEL/CentOS or custom configurations.
+
+# Service and binary names
+apache_service: apache2              # Service name (httpd for RHEL/CentOS)
+apache_binary: apache2ctl            # Binary name (apachectl for RHEL/CentOS)
+
+# Directory paths
+apache_config_dir: /etc/apache2      # Main config directory (/etc/httpd for RHEL/CentOS)
+apache_sites_available: /etc/apache2/sites-available
+apache_sites_enabled: /etc/apache2/sites-enabled
+apache_mods_available: /etc/apache2/mods-available
+apache_mods_enabled: /etc/apache2/mods-enabled
+apache_conf_available: /etc/apache2/conf-available
+apache_conf_enabled: /etc/apache2/conf-enabled
+
+# Default document root
+default_document_root: /var/www/html
+
+# VirtualHost defaults
+default_port: 80
+default_ssl_port: 443
+default_server_admin: webmaster@localhost
+
+# SSL/TLS defaults
+ssl_protocols: "TLSv1.2 TLSv1.3"
+ssl_ciphers: "HIGH:!aNULL:!MD5:!RC4"
+ssl_prefer_server_ciphers: "On"
+ssl_session_cache: "shared:SSL:10m"
+ssl_session_timeout: "10m"
+
+# Directory defaults
+default_options: "Indexes FollowSymLinks"
+default_allow_override: "None"
+default_require: "all granted"
+
+# Performance defaults
+default_mpm: prefork                 # prefork, worker, or event
+default_keep_alive: "On"
+default_keep_alive_timeout: 5
+default_max_keep_alive_requests: 100
+default_timeout: 300
+default_max_clients: 150
+default_max_requests_per_child: 0
+
+# MPM Prefork defaults
+prefork_start_servers: 5
+prefork_min_spare_servers: 5
+prefork_max_spare_servers: 10
+prefork_max_request_workers: 150
+prefork_max_connections_per_child: 0
+
+# MPM Worker defaults
+worker_start_servers: 2
+worker_min_spare_threads: 25
+worker_max_spare_threads: 75
+worker_threads_per_child: 25
+worker_max_request_workers: 150
+worker_max_connections_per_child: 0
+
+# MPM Event defaults
+event_start_servers: 2
+event_min_spare_threads: 25
+event_max_spare_threads: 75
+event_threads_per_child: 25
+event_max_request_workers: 150
+event_max_connections_per_child: 0
+
+# Logging defaults
+log_level: warn                      # debug, info, notice, warn, error, crit, alert, emerg
+error_log: ${APACHE_LOG_DIR}/error.log
+access_log: ${APACHE_LOG_DIR}/access.log
+access_log_format: combined          # combined, common, or custom
+
+# Security defaults
+server_tokens: Prod                  # Full, OS, Minimal, Minor, Major, Prod
+server_signature: "Off"
+trace_enable: "Off"
+
+# Header defaults
+add_x_frame_options: SAMEORIGIN
+add_x_content_type_options: nosniff
+add_x_xss_protection: "1; mode=block"
+
+# Timeout defaults
+request_read_timeout: 20
+limit_request_line: 8190
+limit_request_fieldsize: 8190
+limit_request_fields: 100
+
+# Platform detection (used internally)
+# These are auto-detected but can be overridden
+use_a2ensite: true                   # false for RHEL/CentOS
+use_a2enmod: true                    # false for RHEL/CentOS

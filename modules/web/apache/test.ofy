@@ -1,0 +1,398 @@
+# Apache Module Test Stack
+#
+# This stack tests all major operations of the Apache module
+# Usage: froyo apply modules/web/apache/test.ofy
+
+name: apache-module-test
+description: Test Apache HTTP Server module operations
+
+# Test inventory (adjust hosts to your environment)
+inventory:
+  hosts:
+    - localhost  # Change to your test server
+
+# Default variables
+defaults:
+  apache_service: apache2
+  apache_config_dir: /etc/apache2
+  test_domain: test.example.local
+  test_document_root: /var/www/test
+
+# Test execution plan
+run:
+  # ========================================
+  # Service Management Tests
+  # ========================================
+
+  - name: "Test 1: Check Apache service status"
+    module: apache
+    hosts: localhost
+    vars:
+      command: check_service_status
+      verbose: true
+
+  - name: "Test 2: Test Apache configuration syntax"
+    module: apache
+    hosts: localhost
+    vars:
+      command: test_config
+      verbose: true
+
+  # ========================================
+  # Module Management Tests
+  # ========================================
+
+  - name: "Test 3: List currently loaded modules"
+    module: apache
+    hosts: localhost
+    vars:
+      command: list_modules
+      format: text
+
+  - name: "Test 4: List available modules"
+    module: apache
+    hosts: localhost
+    vars:
+      command: list_available_modules
+      format: text
+
+  - name: "Test 5: Enable rewrite module"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_module
+      module_name: rewrite
+      reload_service: false
+
+  - name: "Test 6: Enable headers module"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_module
+      module_name: headers
+      reload_service: false
+
+  - name: "Test 7: Enable SSL module"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_module
+      module_name: ssl
+      reload_service: true
+
+  - name: "Test 8: Check if SSL module is loaded"
+    module: apache
+    hosts: localhost
+    vars:
+      command: check_module_loaded
+      module_name: ssl
+
+  # ========================================
+  # Virtual Host Management Tests
+  # ========================================
+
+  - name: "Test 9: Create test virtual host"
+    module: apache
+    hosts: localhost
+    vars:
+      command: create_vhost
+      vhost_name: "{{ test_domain }}"
+      document_root: "{{ test_document_root }}"
+      server_name: "{{ test_domain }}"
+      server_alias: "www.{{ test_domain }}"
+      port: 80
+      allow_override: All
+
+  - name: "Test 10: List all virtual hosts"
+    module: apache
+    hosts: localhost
+    vars:
+      command: list_vhosts
+      show_details: false
+
+  - name: "Test 11: Test virtual host configuration"
+    module: apache
+    hosts: localhost
+    vars:
+      command: test_vhost_config
+      vhost_file: "{{ test_domain }}.conf"
+      verbose: true
+
+  - name: "Test 12: Enable test virtual host"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_vhost
+      vhost_name: "{{ test_domain }}"
+      reload_service: true
+
+  # ========================================
+  # Configuration Management Tests
+  # ========================================
+
+  - name: "Test 13: Add directory block to virtual host"
+    module: apache
+    hosts: localhost
+    vars:
+      command: add_directory_block
+      directory_path: "{{ test_document_root }}/admin"
+      vhost_file: "{{ test_domain }}.conf"
+      options: "None"
+      allow_override: "None"
+      require: "ip 127.0.0.1"
+
+  - name: "Test 14: Set document root"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_document_root
+      vhost_file: "{{ test_domain }}.conf"
+      document_root: "{{ test_document_root }}"
+      create_directory: true
+
+  # ========================================
+  # SSL/TLS Configuration Tests
+  # ========================================
+
+  - name: "Test 15: Create SSL virtual host (self-signed for testing)"
+    module: apache
+    hosts: localhost
+    vars:
+      command: create_ssl_vhost
+      vhost_name: "ssl.{{ test_domain }}"
+      document_root: "{{ test_document_root }}"
+      server_name: "ssl.{{ test_domain }}"
+      ssl_certificate: /etc/ssl/certs/ssl-cert-snakeoil.pem
+      ssl_certificate_key: /etc/ssl/private/ssl-cert-snakeoil.key
+      ssl_protocols: "TLSv1.2 TLSv1.3"
+      hsts_enabled: true
+      redirect_http_to_https: false
+
+  - name: "Test 16: Set SSL protocols globally"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_ssl_protocols
+      ssl_protocols: "TLSv1.2 TLSv1.3"
+      config_scope: global
+
+  - name: "Test 17: Set SSL ciphers"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_ssl_ciphers
+      ssl_ciphers: "HIGH:!aNULL:!MD5:!RC4"
+      ssl_prefer_server_ciphers: "On"
+      config_scope: global
+
+  - name: "Test 18: Test SSL configuration"
+    module: apache
+    hosts: localhost
+    vars:
+      command: test_ssl_config
+      check_certificates: false
+
+  # ========================================
+  # Performance Tuning Tests
+  # ========================================
+
+  - name: "Test 19: Configure Event MPM"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_mpm_config
+      mpm_module: event
+      start_servers: 2
+      min_spare_threads: 25
+      max_spare_threads: 75
+      threads_per_child: 25
+      max_request_workers: 150
+
+  - name: "Test 20: Configure KeepAlive settings"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_keepalive
+      keep_alive: "On"
+      keep_alive_timeout: 5
+      max_keep_alive_requests: 100
+      config_scope: global
+
+  - name: "Test 21: Set timeout values"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_timeout
+      timeout: 300
+      config_scope: global
+
+  - name: "Test 22: Set max clients"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_max_clients
+      max_clients: 150
+      mpm_module: event
+
+  # ========================================
+  # Security Configuration Tests
+  # ========================================
+
+  - name: "Test 23: Configure security headers globally"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_security_headers
+      config_scope: global
+      x_frame_options: SAMEORIGIN
+      x_content_type_options: nosniff
+      x_xss_protection: "1; mode=block"
+
+  - name: "Test 24: Set log level"
+    module: apache
+    hosts: localhost
+    vars:
+      command: set_log_level
+      log_level: warn
+      config_scope: global
+
+  # ========================================
+  # Proxy Configuration Tests
+  # ========================================
+
+  - name: "Test 25: Enable proxy module"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_module
+      module_name: proxy
+      reload_service: false
+
+  - name: "Test 26: Enable proxy_http module"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_module
+      module_name: proxy_http
+      reload_service: true
+
+  - name: "Test 27: Create reverse proxy virtual host"
+    module: apache
+    hosts: localhost
+    vars:
+      command: create_proxy_vhost
+      vhost_name: "proxy.{{ test_domain }}"
+      proxy_target: http://localhost:8080
+      server_name: "proxy.{{ test_domain }}"
+      proxy_preserve_host: true
+      proxy_timeout: 300
+
+  # ========================================
+  # Configuration File Management Tests
+  # ========================================
+
+  - name: "Test 28: Enable security configuration"
+    module: apache
+    hosts: localhost
+    vars:
+      command: enable_conf
+      conf_name: security
+      reload_service: false
+
+  # ========================================
+  # Final Configuration Test and Reload
+  # ========================================
+
+  - name: "Test 29: Final configuration test"
+    module: apache
+    hosts: localhost
+    vars:
+      command: test_config
+      verbose: true
+      show_vhosts: true
+
+  - name: "Test 30: Reload Apache configuration"
+    module: apache
+    hosts: localhost
+    vars:
+      command: reload_config
+      test_first: true
+
+  - name: "Test 31: Verify service is running"
+    module: apache
+    hosts: localhost
+    vars:
+      command: check_service_status
+      verbose: true
+
+  # ========================================
+  # Cleanup Tests (Optional - comment out to keep test config)
+  # ========================================
+
+  # - name: "Cleanup 1: Disable test virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: disable_vhost
+  #     vhost_name: "{{ test_domain }}"
+  #     reload_service: false
+
+  # - name: "Cleanup 2: Disable SSL virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: disable_vhost
+  #     vhost_name: "ssl.{{ test_domain }}"
+  #     reload_service: false
+
+  # - name: "Cleanup 3: Disable proxy virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: disable_vhost
+  #     vhost_name: "proxy.{{ test_domain }}"
+  #     reload_service: false
+
+  # - name: "Cleanup 4: Delete test virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: delete_vhost
+  #     vhost_name: "{{ test_domain }}"
+  #     remove_document_root: true
+
+  # - name: "Cleanup 5: Delete SSL virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: delete_vhost
+  #     vhost_name: "ssl.{{ test_domain }}"
+
+  # - name: "Cleanup 6: Delete proxy virtual host"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: delete_vhost
+  #     vhost_name: "proxy.{{ test_domain }}"
+
+  # - name: "Cleanup 7: Final reload"
+  #   module: apache
+  #   hosts: localhost
+  #   vars:
+  #     command: reload_config
+  #     test_first: true
+
+# Test completion summary
+summary:
+  - Total tests: 31 operations
+  - Categories tested:
+    - Service management (2 tests)
+    - Module management (6 tests)
+    - Virtual host management (5 tests)
+    - Configuration management (2 tests)
+    - SSL/TLS configuration (4 tests)
+    - Performance tuning (4 tests)
+    - Security configuration (2 tests)
+    - Proxy configuration (3 tests)
+    - Configuration file management (1 test)
+    - Final validation (2 tests)

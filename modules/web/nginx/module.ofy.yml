@@ -1,0 +1,67 @@
+name: nginx
+description: Comprehensive Nginx web server management module supporting server blocks, upstreams, SSL/TLS, location blocks, configuration management, service management, and performance tuning
+version: 1.0.0
+category: web
+
+steps:
+  # Main orchestration step - delegates to WASM based on command
+  - name: Execute Nginx command
+    wasm: nginx.wasm
+    input:
+      command: "{{ var.command }}"
+
+      # Service configuration
+      nginx_config_dir: "{{ var.nginx_config_dir | default('/etc/nginx') }}"
+      nginx_sites_available: "{{ var.nginx_sites_available | default('/etc/nginx/sites-available') }}"
+      nginx_sites_enabled: "{{ var.nginx_sites_enabled | default('/etc/nginx/sites-enabled') }}"
+      nginx_conf_d: "{{ var.nginx_conf_d | default('/etc/nginx/conf.d') }}"
+
+      # Server block parameters
+      server_name: "{{ var.server_name | default('') }}"
+      server_file: "{{ var.server_file | default('') }}"
+      listen_port: "{{ var.listen_port | default('80') }}"
+      listen_ssl_port: "{{ var.listen_ssl_port | default('443') }}"
+      root: "{{ var.root | default('') }}"
+      index: "{{ var.index | default('index.html index.htm') }}"
+
+      # SSL/TLS parameters
+      ssl_certificate: "{{ var.ssl_certificate | default('') }}"
+      ssl_certificate_key: "{{ var.ssl_certificate_key | default('') }}"
+      ssl_protocols: "{{ var.ssl_protocols | default('TLSv1.2 TLSv1.3') }}"
+      ssl_ciphers: "{{ var.ssl_ciphers | default('HIGH:!aNULL:!MD5') }}"
+      ssl_prefer_server_ciphers: "{{ var.ssl_prefer_server_ciphers | default('on') }}"
+      http2: "{{ var.http2 | default('false') }}"
+
+      # Upstream parameters
+      upstream_name: "{{ var.upstream_name | default('') }}"
+      upstream_servers: "{{ var.upstream_servers | default([]) }}"
+      upstream_server: "{{ var.upstream_server | default('') }}"
+      load_balance_method: "{{ var.load_balance_method | default('round_robin') }}"
+
+      # Location parameters
+      location_path: "{{ var.location_path | default('/') }}"
+      proxy_pass: "{{ var.proxy_pass | default('') }}"
+      fastcgi_pass: "{{ var.fastcgi_pass | default('') }}"
+      try_files: "{{ var.try_files | default('') }}"
+
+      # Rewrite parameters
+      rewrite_regex: "{{ var.rewrite_regex | default('') }}"
+      rewrite_replacement: "{{ var.rewrite_replacement | default('') }}"
+      rewrite_flag: "{{ var.rewrite_flag | default('') }}"
+
+      # Header parameters
+      header_name: "{{ var.header_name | default('') }}"
+      header_value: "{{ var.header_value | default('') }}"
+
+      # Performance parameters
+      worker_processes: "{{ var.worker_processes | default('auto') }}"
+      worker_connections: "{{ var.worker_connections | default('1024') }}"
+
+      # Additional options
+      additional_config: "{{ var.additional_config | default('') }}"
+      force: "{{ var.force | default('false') }}"
+
+outputs:
+  - status
+  - message
+  - facts
