@@ -8,12 +8,22 @@ type Inventory struct {
 
 // Host represents a single host configuration
 type Host struct {
-	SSHHost     string            `yaml:"ssh_host"`
-	SSHPort     int               `yaml:"ssh_port"`
-	SSHUser     string            `yaml:"ssh_user"`
-	SSHPassword string            `yaml:"ssh_password,omitempty"`
-	SSHKeyFile  string            `yaml:"ssh_key_file,omitempty"`
-	Vars        map[string]string `yaml:"vars,omitempty"`
+	// Execution mode
+	Mode string `yaml:"mode,omitempty"` // "ssh" (default) or "agent"
+
+	// SSH mode configuration
+	SSHHost     string `yaml:"ssh_host,omitempty"`
+	SSHPort     int    `yaml:"ssh_port,omitempty"`
+	SSHUser     string `yaml:"ssh_user,omitempty"`
+	SSHPassword string `yaml:"ssh_password,omitempty"`
+	SSHKeyFile  string `yaml:"ssh_key_file,omitempty"`
+
+	// Agent mode configuration
+	AgentID    string `yaml:"agent_id,omitempty"`    // Agent identifier
+	Datacenter string `yaml:"datacenter,omitempty"`  // Datacenter location
+
+	// Common configuration
+	Vars map[string]string `yaml:"vars,omitempty"`
 }
 
 // Group represents a group of hosts

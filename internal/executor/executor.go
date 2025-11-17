@@ -3,18 +3,22 @@ package executor
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	orchestratorExecutor "github.com/piwi3910/openfroyo/internal/orchestrator/executor"
 	"github.com/piwi3910/openfroyo/internal/parser"
 	sshclient "github.com/piwi3910/openfroyo/internal/ssh"
 )
 
 // Executor executes a stack
 type Executor struct {
-	stack     *parser.Stack
-	inventory *parser.Inventory
+	stack         *parser.Stack
+	inventory     *parser.Inventory
+	agentExecutor *orchestratorExecutor.AgentExecutor
+	logger        *log.Logger
 }
 
 // NewExecutor creates a new executor
@@ -22,7 +26,13 @@ func NewExecutor(stack *parser.Stack, inventory *parser.Inventory) *Executor {
 	return &Executor{
 		stack:     stack,
 		inventory: inventory,
+		logger:    log.New(os.Stdout, "", 0),
 	}
+}
+
+// SetAgentExecutor sets the agent executor for agent mode hosts
+func (e *Executor) SetAgentExecutor(agentExec *orchestratorExecutor.AgentExecutor) {
+	e.agentExecutor = agentExec
 }
 
 // Execute runs the stack
@@ -68,7 +78,25 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 		return err
 	}
 
-	fmt.Printf("  → %s (%s)\n", hostName, host.SSHHost)
+	// Determine execution mode (default to SSH if not specified)
+	mode := host.Mode
+	if mode == "" {
+		mode = "ssh"
+	}
+
+	// Route to appropriate executor based on mode
+	switch mode {
+	case "agent":
+		return e.executeOnAgent(hostName, host, entry)
+	case "ssh":
+		return e.executeOnSSH(hostName, host, entry, runnerPath)
+	default:
+		return fmt.Errorf("unknown execution mode: %s", mode)
+	}
+}
+
+func (e *Executor) executeOnSSH(hostName string, host parser.Host, entry parser.RunEntry, runnerPath string) error {
+	fmt.Printf("  → %s (%s) [SSH]\n", hostName, host.SSHHost)
 
 	// Connect via SSH
 	client, err := sshclient.NewClient(host)
@@ -186,6 +214,69 @@ func (e *Executor) executeOnHost(hostName string, entry parser.RunEntry, runnerP
 
 	if output.Status == "failed" {
 		return fmt.Errorf("task failed: %s", output.Message)
+	}
+
+	return nil
+}
+
+func (e *Executor) executeOnAgent(hostName string, host parser.Host, entry parser.RunEntry) error {
+	// Check if agent executor is configured
+	if e.agentExecutor == nil {
+		return fmt.Errorf("agent mode requested but NATS not configured (use --nats-server flag)")
+	}
+
+	// Validate agent configuration
+	if host.AgentID == "" {
+		return fmt.Errorf("agent_id is required for agent mode")
+	}
+	if host.Datacenter == "" {
+		return fmt.Errorf("datacenter is required for agent mode")
+	}
+
+	fmt.Printf("  → %s (agent: %s) [AGENT]\n", hostName, host.AgentID)
+
+	// Merge vars (defaults + entry-specific)
+	vars := make(map[string]interface{})
+	for k, v := range e.stack.Defaults {
+		vars[k] = v
+	}
+	for k, v := range entry.Vars {
+		vars[k] = v
+	}
+
+	// Execute task on agent via NATS
+	result, err := e.agentExecutor.ExecuteTask(
+		host.Datacenter,
+		host.AgentID,
+		entry.Name,
+		entry.Module,
+		vars,
+		300, // 5 minute timeout
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to execute on agent: %w", err)
+	}
+
+	// Display result
+	statusIcon := "✓"
+	if result.Status == "failed" {
+		statusIcon = "✗"
+	} else if result.Status == "changed" {
+		statusIcon = "↻"
+	}
+
+	fmt.Printf("    %s %s: %s\n", statusIcon, result.Status, result.Message)
+
+	// Display facts
+	if len(result.Facts) > 0 {
+		for key, value := range result.Facts {
+			fmt.Printf("      %s: %v\n", key, value)
+		}
+	}
+
+	if result.Status == "failed" {
+		return fmt.Errorf("task failed: %s", result.Message)
 	}
 
 	return nil

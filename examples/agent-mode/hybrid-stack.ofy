@@ -1,0 +1,50 @@
+name: Hybrid Mode Example Stack
+description: Demonstrates executing tasks on both SSH and agent-based hosts
+
+inventory:
+  - inventory.yml
+
+defaults:
+  message: "Hello from OpenFroyo!"
+
+run:
+  # Task 1: Execute on SSH host (legacy-server)
+  - name: Create file on SSH host
+    module: generic/file
+    hosts:
+      - legacy-server
+    vars:
+      path: /tmp/openfroyo-ssh.txt
+      state: touch
+      mode: '0644'
+
+  # Task 2: Execute on agent-based hosts (web-01, web-02)
+  - name: Create file on agent hosts
+    module: generic/file
+    hosts:
+      - web-01
+      - web-02
+    vars:
+      path: /tmp/openfroyo-agent.txt
+      state: touch
+      mode: '0644'
+
+  # Task 3: Execute on all webservers (both agent hosts)
+  - name: Install nginx on webservers
+    module: linux/package
+    hosts:
+      - @group:webservers
+    vars:
+      name: nginx
+      state: present
+
+  # Task 4: Mixed execution (SSH + agent)
+  - name: Check system info on all hosts
+    module: generic/command
+    hosts:
+      - legacy-server
+      - web-01
+      - web-02
+      - db-server
+    vars:
+      cmd: uname -a
