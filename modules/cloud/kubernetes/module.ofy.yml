@@ -1,0 +1,32 @@
+---
+# Kubernetes Module for OpenFroyo
+# Provides comprehensive Kubernetes cluster management operations
+# Requires kubectl to be installed on target hosts
+
+name: kubernetes
+description: Manage Kubernetes clusters with kubectl operations
+version: 1.0.0
+category: cloud
+
+# Module steps execute in order
+steps:
+  # Validate kubectl installation
+  - name: Check kubectl installation
+    wasm: wasm/kubernetes.wasm
+    register: kubectl_check
+
+  # Execute requested Kubernetes operation
+  - name: Execute Kubernetes command
+    wasm: wasm/kubernetes.wasm
+    vars:
+      operation: execute
+    register: kubectl_result
+
+# Output facts for use in subsequent tasks
+facts:
+  kubectl_installed: "{{ kubectl_check.facts.installed }}"
+  kubectl_version: "{{ kubectl_check.facts.version }}"
+  command_status: "{{ kubectl_result.status }}"
+  command_output: "{{ kubectl_result.facts.output }}"
+  resource_created: "{{ kubectl_result.facts.resource_created }}"
+  resource_name: "{{ kubectl_result.facts.resource_name }}"

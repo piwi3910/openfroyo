@@ -1,0 +1,163 @@
+---
+# Default variables for Kubernetes module
+
+# Kubernetes connection settings
+kubeconfig: ""  # Path to kubeconfig file (empty = use default ~/.kube/config or in-cluster config)
+context: ""     # Kubernetes context to use (empty = use current context)
+namespace: "default"  # Default namespace for operations
+
+# Operation to perform (required)
+command: ""
+
+# Deployment parameters
+deployment_name: ""
+image: ""
+replicas: 1
+port: 80
+container_port: 80
+labels: {}
+env_vars: {}
+resource_limits_cpu: ""
+resource_limits_memory: ""
+resource_requests_cpu: ""
+resource_requests_memory: ""
+
+# Service parameters
+service_name: ""
+service_type: "ClusterIP"  # ClusterIP, NodePort, LoadBalancer, ExternalName
+target_port: 80
+node_port: ""
+selector: {}
+external_ips: []
+
+# Pod parameters
+pod_name: ""
+container_name: ""
+pod_command: []
+pod_args: []
+restart_policy: "Always"  # Always, OnFailure, Never
+
+# ConfigMap parameters
+configmap_name: ""
+configmap_data: {}
+configmap_from_file: ""
+
+# Secret parameters
+secret_name: ""
+secret_data: {}
+secret_type: "Opaque"  # Opaque, kubernetes.io/tls, kubernetes.io/dockerconfigjson
+secret_from_file: ""
+
+# Namespace parameters
+namespace_name: ""
+
+# Ingress parameters
+ingress_name: ""
+ingress_host: ""
+ingress_path: "/"
+ingress_path_type: "Prefix"  # Prefix, Exact, ImplementationSpecific
+ingress_service_name: ""
+ingress_service_port: 80
+ingress_tls_enabled: false
+ingress_tls_secret: ""
+ingress_annotations: {}
+
+# PersistentVolumeClaim parameters
+pvc_name: ""
+storage_class: ""
+storage_size: "10Gi"
+access_mode: "ReadWriteOnce"  # ReadWriteOnce, ReadOnlyMany, ReadWriteMany
+
+# Job parameters
+job_name: ""
+job_image: ""
+job_command: []
+job_backoff_limit: 4
+job_completions: 1
+job_parallelism: 1
+
+# CronJob parameters
+cronjob_name: ""
+cronjob_schedule: ""
+cronjob_image: ""
+cronjob_command: []
+
+# StatefulSet parameters
+statefulset_name: ""
+statefulset_service_name: ""
+statefulset_replicas: 1
+
+# DaemonSet parameters
+daemonset_name: ""
+daemonset_image: ""
+
+# HorizontalPodAutoscaler parameters
+hpa_name: ""
+hpa_min_replicas: 1
+hpa_max_replicas: 10
+hpa_cpu_percent: 80
+
+# ResourceQuota parameters
+quota_name: ""
+quota_hard: {}
+
+# LimitRange parameters
+limitrange_name: ""
+limitrange_limits: {}
+
+# ServiceAccount parameters
+serviceaccount_name: ""
+
+# Role and RoleBinding parameters
+role_name: ""
+rolebinding_name: ""
+clusterrole_name: ""
+clusterrolebinding_name: ""
+
+# NetworkPolicy parameters
+networkpolicy_name: ""
+networkpolicy_pod_selector: {}
+networkpolicy_ingress: []
+networkpolicy_egress: []
+
+# General execution parameters
+manifest_file: ""  # Path to YAML manifest file
+manifest_content: ""  # YAML manifest content (base64 encoded if needed)
+dry_run: false  # Perform dry-run
+force: false  # Force operation
+wait: true  # Wait for operation to complete
+timeout: "5m"  # Operation timeout
+output_format: "wide"  # Output format: wide, json, yaml, name
+show_labels: false
+show_events: false
+
+# Log parameters
+log_follow: false
+log_tail_lines: 100
+log_since: ""
+log_timestamps: false
+log_previous: false
+
+# Exec parameters
+exec_command: []
+exec_stdin: false
+exec_tty: false
+
+# Scale parameters
+scale_replicas: 1
+
+# Rollout parameters
+rollout_revision: 0
+
+# Label and annotation operations
+labels_to_add: {}
+labels_to_remove: []
+annotations_to_add: {}
+annotations_to_remove: []
+
+# Advanced options
+cascade: true  # Cascade delete
+grace_period: 30  # Grace period for deletion
+selector_labels: {}  # Label selector
+field_selector: ""  # Field selector
+all_namespaces: false  # Query all namespaces

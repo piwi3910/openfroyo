@@ -1,0 +1,200 @@
+---
+# Kubernetes Module Test Stack
+# Demonstrates various Kubernetes operations
+
+inventory: "@localhost"
+
+defaults:
+  namespace: default
+  kubeconfig: ~/.kube/config
+
+run:
+  # Test 1: Create a namespace
+  - name: Create test namespace
+    module: cloud/kubernetes
+    vars:
+      command: create_namespace
+      namespace_name: froyo-test
+
+  # Test 2: Create a deployment
+  - name: Create nginx deployment
+    module: cloud/kubernetes
+    vars:
+      command: create_deployment
+      deployment_name: nginx-app
+      image: nginx:latest
+      replicas: 3
+      port: 80
+      namespace: froyo-test
+      labels:
+        app: nginx
+        environment: test
+
+  # Test 3: Expose deployment as a service
+  - name: Expose nginx deployment
+    module: cloud/kubernetes
+    vars:
+      command: expose_deployment
+      deployment_name: nginx-app
+      service_type: LoadBalancer
+      port: 80
+      namespace: froyo-test
+
+  # Test 4: Scale deployment
+  - name: Scale nginx deployment
+    module: cloud/kubernetes
+    vars:
+      command: scale_deployment
+      deployment_name: nginx-app
+      replicas: 5
+      namespace: froyo-test
+
+  # Test 5: Create a ConfigMap
+  - name: Create application config
+    module: cloud/kubernetes
+    vars:
+      command: create_configmap
+      configmap_name: app-config
+      namespace: froyo-test
+      configmap_data:
+        app.env: production
+        app.port: "8080"
+        app.debug: "false"
+
+  # Test 6: Create a Secret
+  - name: Create database credentials
+    module: cloud/kubernetes
+    vars:
+      command: create_secret
+      secret_name: db-credentials
+      secret_type: generic
+      namespace: froyo-test
+      secret_data:
+        username: admin
+        password: secretpassword123
+
+  # Test 7: Create a PersistentVolumeClaim
+  - name: Create storage for app
+    module: cloud/kubernetes
+    vars:
+      command: create_pvc
+      pvc_name: app-storage
+      storage_size: 5Gi
+      access_mode: ReadWriteOnce
+      namespace: froyo-test
+
+  # Test 8: List all pods
+  - name: List all pods in namespace
+    module: cloud/kubernetes
+    vars:
+      command: list_pods
+      namespace: froyo-test
+
+  # Test 9: Describe deployment
+  - name: Get deployment details
+    module: cloud/kubernetes
+    vars:
+      command: describe_deployment
+      deployment_name: nginx-app
+      namespace: froyo-test
+
+  # Test 10: Check rollout status
+  - name: Check rollout status
+    module: cloud/kubernetes
+    vars:
+      command: rollout_status
+      deployment_name: nginx-app
+      namespace: froyo-test
+
+  # Test 11: Update deployment image
+  - name: Update nginx to specific version
+    module: cloud/kubernetes
+    vars:
+      command: update_deployment
+      deployment_name: nginx-app
+      image: nginx:1.21
+      namespace: froyo-test
+
+  # Test 12: Create an Ingress
+  - name: Create ingress for nginx
+    module: cloud/kubernetes
+    vars:
+      command: create_ingress
+      ingress_name: nginx-ingress
+      ingress_host: nginx.example.com
+      ingress_path: /
+      ingress_service_name: nginx-app
+      ingress_service_port: 80
+      namespace: froyo-test
+
+  # Test 13: List services
+  - name: List all services
+    module: cloud/kubernetes
+    vars:
+      command: list_services
+      namespace: froyo-test
+
+  # Test 14: List ConfigMaps
+  - name: List all ConfigMaps
+    module: cloud/kubernetes
+    vars:
+      command: list_configmaps
+      namespace: froyo-test
+
+  # Test 15: List Secrets
+  - name: List all Secrets
+    module: cloud/kubernetes
+    vars:
+      command: list_secrets
+      namespace: froyo-test
+
+  # Cleanup section (commented out by default)
+  # Uncomment to clean up test resources
+
+  # - name: Delete ingress
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_ingress
+  #     ingress_name: nginx-ingress
+  #     namespace: froyo-test
+
+  # - name: Delete service
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_service
+  #     service_name: nginx-app
+  #     namespace: froyo-test
+
+  # - name: Delete deployment
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_deployment
+  #     deployment_name: nginx-app
+  #     namespace: froyo-test
+
+  # - name: Delete PVC
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_pvc
+  #     pvc_name: app-storage
+  #     namespace: froyo-test
+
+  # - name: Delete ConfigMap
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_configmap
+  #     configmap_name: app-config
+  #     namespace: froyo-test
+
+  # - name: Delete Secret
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_secret
+  #     secret_name: db-credentials
+  #     namespace: froyo-test
+
+  # - name: Delete namespace
+  #   module: cloud/kubernetes
+  #   vars:
+  #     command: delete_namespace
+  #     namespace_name: froyo-test
