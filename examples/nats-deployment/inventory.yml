@@ -1,0 +1,10 @@
+---
+# NATS Server Inventory
+
+hosts:
+  nats-server:
+    mode: ssh
+    ssh_host: 192.168.1.50  # Update with your NATS server IP
+    ssh_port: 22
+    ssh_user: root
+    ssh_key_file: ~/.ssh/id_rsa

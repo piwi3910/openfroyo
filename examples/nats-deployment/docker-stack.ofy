@@ -1,0 +1,134 @@
+name: Deploy NATS Server (Docker)
+description: Deploy NATS message queue server using Docker
+
+inventory:
+  - inventory.yml
+
+defaults:
+  nats_version: "2.10"
+  nats_port: 4222
+  nats_http_port: 8222
+  nats_cluster_port: 6222
+  nats_container_name: "nats-server"
+
+run:
+  # Step 1: Install Docker if not present
+  - name: Ensure Docker is installed
+    module: linux/package
+    hosts:
+      - nats-server
+    vars:
+      name: docker.io
+      state: present
+
+  # Step 2: Ensure Docker service is running
+  - name: Start Docker service
+    module: generic/service
+    hosts:
+      - nats-server
+    vars:
+      name: docker
+      state: started
+      enabled: true
+
+  # Step 3: Create NATS configuration directory
+  - name: Create NATS config directory
+    module: generic/file
+    hosts:
+      - nats-server
+    vars:
+      path: /etc/nats
+      state: directory
+      mode: '0755'
+
+  # Step 4: Create NATS configuration file
+  - name: Create NATS configuration
+    module: generic/copy
+    hosts:
+      - nats-server
+    vars:
+      dest: /etc/nats/nats-server.conf
+      content: |
+        # NATS Server Configuration
+        port: {{ nats_port }}
+        http_port: {{ nats_http_port }}
+
+        # Logging
+        debug: false
+        trace: false
+        logtime: true
+
+        # Limits
+        max_connections: 10000
+        max_payload: 1048576  # 1MB
+
+        # JetStream (optional, for reliable messaging)
+        jetstream {
+          store_dir: /data/jetstream
+          max_memory_store: 1GB
+          max_file_store: 10GB
+        }
+      mode: '0644'
+
+  # Step 5: Stop existing NATS container if running
+  - name: Stop existing NATS container
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: docker stop {{ nats_container_name }} || true
+
+  # Step 6: Remove existing NATS container
+  - name: Remove existing NATS container
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: docker rm {{ nats_container_name }} || true
+
+  # Step 7: Run NATS container
+  - name: Start NATS server container
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: |
+        docker run -d \
+          --name {{ nats_container_name }} \
+          --restart unless-stopped \
+          -p {{ nats_port }}:4222 \
+          -p {{ nats_http_port }}:8222 \
+          -p {{ nats_cluster_port }}:6222 \
+          -v /etc/nats/nats-server.conf:/nats-server.conf \
+          -v /var/lib/nats:/data \
+          nats:{{ nats_version }} \
+          -c /nats-server.conf
+
+  # Step 8: Wait for NATS to be ready
+  - name: Wait for NATS to start
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: sleep 5 && curl -f http://localhost:{{ nats_http_port }}/varz
+
+  # Step 9: Display NATS connection info
+  - name: Show NATS info
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: |
+        echo "================================================"
+        echo "NATS Server Deployed Successfully!"
+        echo "================================================"
+        echo "NATS URL: nats://$(hostname -I | awk '{print $1}'):{{ nats_port }}"
+        echo "HTTP Monitoring: http://$(hostname -I | awk '{print $1}'):{{ nats_http_port }}"
+        echo "Container: {{ nats_container_name }}"
+        echo ""
+        echo "To connect agents, use:"
+        echo "  servers: [\"nats://$(hostname -I | awk '{print $1}'):{{ nats_port }}\"]"
+        echo ""
+        echo "To view logs:"
+        echo "  docker logs -f {{ nats_container_name }}"
+        echo "================================================"

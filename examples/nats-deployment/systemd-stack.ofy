@@ -1,0 +1,254 @@
+name: Deploy NATS Server (Systemd)
+description: Deploy NATS message queue server as systemd service
+
+inventory:
+  - inventory.yml
+
+defaults:
+  nats_version: "2.10.22"
+  nats_port: 4222
+  nats_http_port: 8222
+  nats_user: nats
+  nats_group: nats
+  nats_install_dir: /usr/local/bin
+  nats_config_dir: /etc/nats
+  nats_data_dir: /var/lib/nats
+
+run:
+  # Step 1: Create NATS user and group
+  - name: Create NATS group
+    module: linux/group
+    hosts:
+      - nats-server
+    vars:
+      name: "{{ nats_group }}"
+      state: present
+      system: true
+
+  - name: Create NATS user
+    module: linux/user
+    hosts:
+      - nats-server
+    vars:
+      name: "{{ nats_user }}"
+      group: "{{ nats_group }}"
+      system: true
+      create_home: false
+      shell: /bin/false
+      comment: "NATS Server Service Account"
+
+  # Step 2: Create directories
+  - name: Create NATS config directory
+    module: generic/file
+    hosts:
+      - nats-server
+    vars:
+      path: "{{ nats_config_dir }}"
+      state: directory
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: Create NATS data directory
+    module: generic/file
+    hosts:
+      - nats-server
+    vars:
+      path: "{{ nats_data_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ nats_user }}"
+      group: "{{ nats_group }}"
+
+  # Step 3: Download NATS server binary
+  - name: Download NATS server
+    module: generic/get_url
+    hosts:
+      - nats-server
+    vars:
+      url: "https://github.com/nats-io/nats-server/releases/download/v{{ nats_version }}/nats-server-v{{ nats_version }}-linux-amd64.tar.gz"
+      dest: /tmp/nats-server.tar.gz
+      mode: '0644'
+
+  # Step 4: Extract NATS binary
+  - name: Extract NATS server
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: |
+        cd /tmp
+        tar -xzf nats-server.tar.gz
+        cp nats-server-v{{ nats_version }}-linux-amd64/nats-server {{ nats_install_dir }}/
+        chmod 755 {{ nats_install_dir }}/nats-server
+        rm -rf nats-server-v{{ nats_version }}-linux-amd64 nats-server.tar.gz
+
+  # Step 5: Create NATS configuration
+  - name: Create NATS configuration file
+    module: generic/copy
+    hosts:
+      - nats-server
+    vars:
+      dest: "{{ nats_config_dir }}/nats-server.conf"
+      content: |
+        # NATS Server Configuration
+        port: {{ nats_port }}
+        http_port: {{ nats_http_port }}
+
+        # Server identification
+        server_name: nats-server
+
+        # Logging
+        debug: false
+        trace: false
+        logtime: true
+        log_file: "/var/log/nats/nats-server.log"
+
+        # Limits
+        max_connections: 10000
+        max_control_line: 4096
+        max_payload: 1048576  # 1MB
+        max_pending: 67108864  # 64MB
+
+        # Client timeout
+        ping_interval: 20s
+        ping_max: 2
+
+        # Write deadline
+        write_deadline: 10s
+
+        # JetStream for reliable messaging
+        jetstream {
+          store_dir: "{{ nats_data_dir }}/jetstream"
+          max_memory_store: 1GB
+          max_file_store: 10GB
+        }
+
+        # Cluster configuration (for multi-server setup)
+        # cluster {
+        #   name: openfroyo
+        #   listen: 0.0.0.0:6222
+        #   routes: [
+        #     nats://nats-server-2:6222
+        #     nats://nats-server-3:6222
+        #   ]
+        # }
+      mode: '0644'
+      owner: root
+      group: root
+
+  # Step 6: Create log directory
+  - name: Create NATS log directory
+    module: generic/file
+    hosts:
+      - nats-server
+    vars:
+      path: /var/log/nats
+      state: directory
+      mode: '0755'
+      owner: "{{ nats_user }}"
+      group: "{{ nats_group }}"
+
+  # Step 7: Create systemd service file
+  - name: Create NATS systemd service
+    module: generic/copy
+    hosts:
+      - nats-server
+    vars:
+      dest: /etc/systemd/system/nats-server.service
+      content: |
+        [Unit]
+        Description=NATS Server
+        Documentation=https://nats.io/
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=simple
+        User={{ nats_user }}
+        Group={{ nats_group }}
+
+        # Start NATS
+        ExecStart={{ nats_install_dir }}/nats-server -c {{ nats_config_dir }}/nats-server.conf
+
+        # Restart configuration
+        Restart=always
+        RestartSec=5s
+
+        # Security hardening
+        NoNewPrivileges=true
+        PrivateTmp=true
+        ProtectSystem=strict
+        ProtectHome=true
+        ReadWritePaths={{ nats_data_dir }} /var/log/nats
+
+        # Resource limits
+        LimitNOFILE=65536
+        LimitNPROC=4096
+
+        # Logging
+        StandardOutput=journal
+        StandardError=journal
+        SyslogIdentifier=nats-server
+
+        [Install]
+        WantedBy=multi-user.target
+      mode: '0644'
+      owner: root
+      group: root
+
+  # Step 8: Enable and start NATS service
+  - name: Enable and start NATS server
+    module: generic/service
+    hosts:
+      - nats-server
+    vars:
+      name: nats-server
+      state: started
+      enabled: true
+      daemon_reload: true
+      sleep: 3
+
+  # Step 9: Verify NATS is running
+  - name: Check NATS status
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: systemctl status nats-server --no-pager
+
+  # Step 10: Test NATS connectivity
+  - name: Test NATS HTTP endpoint
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: curl -f http://localhost:{{ nats_http_port }}/varz
+
+  # Step 11: Display connection info
+  - name: Show NATS connection info
+    module: generic/command
+    hosts:
+      - nats-server
+    vars:
+      cmd: |
+        echo "================================================"
+        echo "NATS Server Deployed Successfully!"
+        echo "================================================"
+        echo "NATS URL: nats://$(hostname -I | awk '{print $1}'):{{ nats_port }}"
+        echo "HTTP Monitoring: http://$(hostname -I | awk '{print $1}'):{{ nats_http_port }}"
+        echo "Version: {{ nats_version }}"
+        echo ""
+        echo "Service Commands:"
+        echo "  systemctl status nats-server"
+        echo "  systemctl stop nats-server"
+        echo "  systemctl start nats-server"
+        echo "  systemctl restart nats-server"
+        echo ""
+        echo "Logs:"
+        echo "  journalctl -u nats-server -f"
+        echo "  tail -f /var/log/nats/nats-server.log"
+        echo ""
+        echo "Config: {{ nats_config_dir }}/nats-server.conf"
+        echo "Data: {{ nats_data_dir }}"
+        echo "================================================"
