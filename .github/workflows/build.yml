@@ -1,0 +1,123 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Get dependencies
+      run: |
+        go mod download
+        go mod verify
+
+    - name: Build froyo CLI
+      run: |
+        echo "Building froyo CLI..."
+        make build-cli
+
+    - name: Build froyo-agent
+      run: |
+        echo "Building froyo-agent for all platforms..."
+        make build-agent
+
+    - name: Build froyo-runner
+      run: |
+        echo "Building froyo-runner for all platforms..."
+        make build-runner
+
+    - name: Build froyo-registry
+      run: |
+        echo "Building froyo-registry for all platforms..."
+        make build-registry
+
+    - name: Run tests
+      run: |
+        echo "Running tests..."
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      continue-on-error: true
+
+    - name: List built binaries
+      run: |
+        echo "Built binaries:"
+        ls -lh bin/
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: openfroyo-binaries
+        path: bin/
+        retention-days: 7
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Run go fmt
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Code is not formatted. Run 'go fmt ./...'"
+          gofmt -s -l .
+          exit 1
+        fi
+
+    - name: Install staticcheck
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+    - name: Run staticcheck
+      run: staticcheck ./...
+      continue-on-error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out results.sarif ./...'
+      continue-on-error: true
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results.sarif
+      if: always()

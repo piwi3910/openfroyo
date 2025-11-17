@@ -1,0 +1,177 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Get version from tag
+      id: version
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "Building version: ${GITHUB_REF#refs/tags/}"
+
+    - name: Get dependencies
+      run: |
+        go mod download
+        go mod verify
+
+    - name: Build all binaries
+      run: |
+        echo "Building OpenFroyo ${{ steps.version.outputs.VERSION }}"
+        make build
+
+    - name: Create checksums
+      run: |
+        cd bin
+        sha256sum * > checksums.txt
+        cat checksums.txt
+
+    - name: Package binaries
+      run: |
+        cd bin
+        # Create tar.gz for each binary
+        for file in froyo-agent-* froyo-runner-* froyo-registry-*; do
+          if [ -f "$file" ]; then
+            tar czf "${file}.tar.gz" "$file"
+          fi
+        done
+        ls -lh
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        ## OpenFroyo ${{ steps.version.outputs.VERSION }}
+
+        ### 🎉 What's New
+
+        This release includes:
+        - OpenFroyo CLI (`froyo`)
+        - Agent binary (`froyo-agent`)
+        - Runner binary (`froyo-runner`)
+        - Module Registry (`froyo-registry`)
+
+        ### 📦 Installation
+
+        **CLI (macOS/Linux):**
+        ```bash
+        # macOS (Apple Silicon)
+        curl -L https://github.com/piwi3910/openfroyo/releases/download/${{ steps.version.outputs.VERSION }}/froyo-darwin-arm64.tar.gz | tar xz
+        sudo mv froyo /usr/local/bin/
+
+        # macOS (Intel)
+        curl -L https://github.com/piwi3910/openfroyo/releases/download/${{ steps.version.outputs.VERSION }}/froyo-darwin-amd64.tar.gz | tar xz
+        sudo mv froyo /usr/local/bin/
+
+        # Linux (amd64)
+        curl -L https://github.com/piwi3910/openfroyo/releases/download/${{ steps.version.outputs.VERSION }}/froyo-linux-amd64.tar.gz | tar xz
+        sudo mv froyo /usr/local/bin/
+        ```
+
+        **Agent Deployment:**
+        Use the agent onboarding stack:
+        ```bash
+        froyo apply examples/agent-onboarding/onboard-agent.ofy
+        ```
+
+        **Module Registry:**
+        Use the registry deployment stack:
+        ```bash
+        froyo apply examples/registry-deployment/systemd-stack.ofy
+        ```
+
+        ### 📋 Available Binaries
+
+        **CLI:**
+        - `froyo` (Linux amd64, arm64 / macOS amd64, arm64 / Windows amd64)
+
+        **Agent:**
+        - `froyo-agent-linux-amd64`
+        - `froyo-agent-linux-arm64`
+        - `froyo-agent-darwin-amd64` (macOS Intel)
+        - `froyo-agent-darwin-arm64` (macOS Apple Silicon)
+        - `froyo-agent-windows-amd64.exe`
+
+        **Runner:**
+        - `froyo-runner-linux-amd64`
+        - `froyo-runner-linux-arm64`
+        - `froyo-runner-darwin-amd64`
+        - `froyo-runner-darwin-arm64`
+        - `froyo-runner-windows-amd64.exe`
+
+        **Registry:**
+        - `froyo-registry-linux-amd64`
+        - `froyo-registry-linux-arm64`
+        - `froyo-registry-darwin-amd64`
+        - `froyo-registry-darwin-arm64`
+        - `froyo-registry-windows-amd64.exe`
+
+        ### 🔒 Verification
+
+        Verify checksums:
+        ```bash
+        sha256sum -c checksums.txt
+        ```
+
+        ### 📚 Documentation
+
+        - [Quick Start](https://github.com/piwi3910/openfroyo/blob/main/docs/QUICKSTART-PULL-MODE.md)
+        - [Agent Deployment](https://github.com/piwi3910/openfroyo/tree/main/examples/agent-onboarding)
+        - [Module Registry](https://github.com/piwi3910/openfroyo/tree/main/examples/registry-deployment)
+        - [Examples](https://github.com/piwi3910/openfroyo/tree/main/examples)
+
+        ---
+
+        **Full Changelog**: https://github.com/piwi3910/openfroyo/compare/v1.0.0...${{ steps.version.outputs.VERSION }}
+        EOF
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        body_path: release_notes.md
+        files: |
+          bin/froyo-agent-*.tar.gz
+          bin/froyo-runner-*.tar.gz
+          bin/froyo-registry-*.tar.gz
+          bin/froyo-agent-linux-amd64
+          bin/froyo-agent-linux-arm64
+          bin/froyo-agent-darwin-amd64
+          bin/froyo-agent-darwin-arm64
+          bin/froyo-agent-windows-amd64.exe
+          bin/froyo-runner-linux-amd64
+          bin/froyo-runner-linux-arm64
+          bin/froyo-runner-darwin-amd64
+          bin/froyo-runner-darwin-arm64
+          bin/froyo-runner-windows-amd64.exe
+          bin/froyo-registry-linux-amd64
+          bin/froyo-registry-linux-arm64
+          bin/froyo-registry-darwin-amd64
+          bin/froyo-registry-darwin-arm64
+          bin/froyo-registry-windows-amd64.exe
+          bin/checksums.txt
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

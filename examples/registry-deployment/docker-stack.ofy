@@ -1,0 +1,187 @@
+name: Deploy Module Registry (Docker)
+description: Deploy OpenFroyo module registry using Docker
+
+inventory:
+  - inventory.yml
+
+defaults:
+  registry_version: "1.0.0"
+  registry_port: 8080
+  registry_data_dir: /opt/froyo-registry
+  registry_download_base: "https://github.com/piwi3910/openfroyo/releases/download"
+
+run:
+  # Step 1: Install Docker (if not already installed)
+  - name: Check if Docker is installed
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: docker --version || echo "Docker not installed"
+
+  # Step 2: Create registry directories
+  - name: Create registry data directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}"
+      state: directory
+      mode: '0755'
+
+  - name: Create modules directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}/modules"
+      state: directory
+      mode: '0755'
+
+  - name: Create config directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}/config"
+      state: directory
+      mode: '0755'
+
+  - name: Create logs directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}/logs"
+      state: directory
+      mode: '0755'
+
+  - name: Create data directory
+    module: generic/file
+    hosts:
+      - registry-server
+    vars:
+      path: "{{ registry_data_dir }}/data"
+      state: directory
+      mode: '0755'
+
+  # Step 3: Create registry configuration
+  - name: Create registry configuration file
+    module: generic/copy
+    hosts:
+      - registry-server
+    vars:
+      dest: "{{ registry_data_dir }}/config/registry.yml"
+      mode: '0644'
+      content: |
+        # OpenFroyo Module Registry Configuration
+
+        server:
+          listen: "0.0.0.0:{{ registry_port }}"
+          read_timeout: 30s
+          write_timeout: 30s
+          max_header_bytes: 1048576
+          enable_cors: true
+          enable_metrics: true
+          enable_healthz: true
+
+        storage:
+          modules_dir: "/var/lib/froyo-registry/modules"
+          checksums_file: "/var/lib/froyo-registry/data/checksums.yml"
+          metadata_file: "/var/lib/froyo-registry/data/metadata.yml"
+          enable_cache: true
+          cache_ttl: 3600
+
+        auth:
+          enabled: false
+          type: "none"
+
+        logging:
+          level: "info"
+          format: "text"
+          access_log: true
+          file: "/var/log/froyo-registry/registry.log"
+
+  # Step 4: Stop existing container if running
+  - name: Stop existing registry container
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: docker stop froyo-registry 2>/dev/null || true
+
+  - name: Remove existing registry container
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: docker rm froyo-registry 2>/dev/null || true
+
+  # Step 5: Start registry container
+  - name: Start froyo-registry container
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: |
+        docker run -d \
+          --name froyo-registry \
+          --restart unless-stopped \
+          -p {{ registry_port }}:8080 \
+          -v {{ registry_data_dir }}/modules:/var/lib/froyo-registry/modules:ro \
+          -v {{ registry_data_dir }}/data:/var/lib/froyo-registry/data \
+          -v {{ registry_data_dir }}/logs:/var/log/froyo-registry \
+          -v {{ registry_data_dir }}/config:/etc/froyo-registry:ro \
+          golang:1.21-alpine \
+          sh -c "apk add --no-cache ca-certificates wget && \
+                 wget -O /usr/local/bin/froyo-registry {{ registry_download_base }}/v{{ registry_version }}/froyo-registry-linux-amd64 && \
+                 chmod +x /usr/local/bin/froyo-registry && \
+                 /usr/local/bin/froyo-registry --config /etc/froyo-registry/registry.yml"
+
+  # Step 6: Wait for registry to be ready
+  - name: Wait for registry to start
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: sleep 5
+
+  # Step 7: Verify registry is running
+  - name: Check registry container status
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: docker ps | grep froyo-registry
+
+  # Step 8: Test registry health endpoint
+  - name: Test registry health endpoint
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: curl -f http://localhost:{{ registry_port }}/healthz
+
+  # Step 9: Display registry information
+  - name: Show registry information
+    module: generic/command
+    hosts:
+      - registry-server
+    vars:
+      cmd: |
+        echo "================================================"
+        echo "OpenFroyo Module Registry Deployed (Docker)!"
+        echo "================================================"
+        echo "Registry URL: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}"
+        echo "Health: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}/healthz"
+        echo "Metrics: http://$(hostname -I | awk '{print $1}'):{{ registry_port }}/metrics"
+        echo ""
+        echo "Docker Commands:"
+        echo "  docker logs -f froyo-registry"
+        echo "  docker stop froyo-registry"
+        echo "  docker start froyo-registry"
+        echo "  docker restart froyo-registry"
+        echo ""
+        echo "Modules Directory: {{ registry_data_dir }}/modules"
+        echo "Upload modules to this directory and restart container"
+        echo "================================================"
