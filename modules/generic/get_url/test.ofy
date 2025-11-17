@@ -1,0 +1,63 @@
+name: Test get_url Module
+description: Test downloading files from HTTP/HTTPS URLs
+
+inventory:
+  hosts:
+    - name: test-host
+      ssh_host: localhost
+      ssh_user: $USER
+
+run:
+  # Test 1: Download a file from URL
+  - name: Download test file
+    module: generic/get_url
+    vars:
+      url: https://raw.githubusercontent.com/piwi3910/openfroyo/main/README.md
+      dest: /tmp/openfroyo-readme.md
+      mode: '0644'
+
+  # Test 2: Download with checksum verification
+  - name: Download with checksum
+    module: generic/get_url
+    vars:
+      url: https://dl.google.com/go/go1.21.5.linux-amd64.tar.gz
+      dest: /tmp/go1.21.5.tar.gz
+      checksum: sha256:e2bc0b3e4b64111ec117295c088bde5f00eeed1567999ff77bc859d7df70078e
+      mode: '0644'
+
+  # Test 3: Download binary with executable permissions
+  - name: Download binary
+    module: generic/get_url
+    vars:
+      url: https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64
+      dest: /tmp/yq
+      mode: '0755'
+
+  # Test 4: Download with custom headers
+  - name: Download with headers
+    module: generic/get_url
+    vars:
+      url: https://api.github.com/repos/piwi3910/openfroyo/releases/latest
+      dest: /tmp/latest-release.json
+      headers:
+        Accept: application/json
+        User-Agent: OpenFroyo/1.0
+
+  # Test 5: Download with basic auth (example)
+  # - name: Download with auth
+  #   module: generic/get_url
+  #   vars:
+  #     url: https://example.com/protected/file.tar.gz
+  #     dest: /tmp/protected-file.tar.gz
+  #     username: myuser
+  #     password: mypassword
+
+  # Test 6: Download and set ownership
+  - name: Download and set owner
+    module: generic/get_url
+    vars:
+      url: https://example.com/file.txt
+      dest: /tmp/owned-file.txt
+      mode: '0644'
+      owner: root
+      group: root

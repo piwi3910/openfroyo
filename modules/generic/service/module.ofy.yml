@@ -1,0 +1,37 @@
+---
+name: service
+description: Manage system services across platforms (Linux systemd, Windows services)
+version: 1.0.0
+
+variables:
+  - name: name
+    description: Name of the service to manage
+    required: true
+    type: string
+
+  - name: state
+    description: Desired state of the service (started, stopped, restarted, reloaded)
+    required: false
+    type: string
+    default: started
+
+  - name: enabled
+    description: Whether the service should start on boot (true, false)
+    required: false
+    type: boolean
+
+  - name: daemon_reload
+    description: Run daemon-reload before managing service (Linux systemd only)
+    required: false
+    type: boolean
+    default: false
+
+  - name: sleep
+    description: Seconds to sleep after state change (useful for service startup)
+    required: false
+    type: integer
+    default: 0
+
+steps:
+  - name: Manage service
+    wasm: wasm/service.wasm

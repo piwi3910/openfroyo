@@ -1,0 +1,11 @@
+---
+# Default variables for service module
+
+# Desired service state
+state: started
+
+# Daemon reload before service operations (Linux systemd)
+daemon_reload: false
+
+# Sleep time after state change (seconds)
+sleep: 0

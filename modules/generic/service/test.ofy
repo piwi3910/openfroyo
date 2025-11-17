@@ -1,0 +1,77 @@
+name: Test service Module
+description: Test cross-platform service management
+
+inventory:
+  hosts:
+    - name: test-host
+      ssh_host: localhost
+      ssh_user: $USER
+
+run:
+  # Test 1: Start a service
+  - name: Start nginx service
+    module: generic/service
+    vars:
+      name: nginx
+      state: started
+
+  # Test 2: Enable and start a service
+  - name: Enable and start sshd
+    module: generic/service
+    vars:
+      name: sshd
+      state: started
+      enabled: true
+
+  # Test 3: Restart a service
+  - name: Restart nginx
+    module: generic/service
+    vars:
+      name: nginx
+      state: restarted
+
+  # Test 4: Stop a service
+  - name: Stop nginx
+    module: generic/service
+    vars:
+      name: nginx
+      state: stopped
+
+  # Test 5: Disable a service
+  - name: Disable nginx
+    module: generic/service
+    vars:
+      name: nginx
+      enabled: false
+
+  # Test 6: Reload service configuration
+  - name: Reload nginx config
+    module: generic/service
+    vars:
+      name: nginx
+      state: reloaded
+
+  # Test 7: Start with daemon reload
+  - name: Start with daemon reload
+    module: generic/service
+    vars:
+      name: nginx
+      state: started
+      daemon_reload: true
+
+  # Test 8: Start service and wait
+  - name: Start service with delay
+    module: generic/service
+    vars:
+      name: nginx
+      state: started
+      sleep: 3
+
+  # Test 9: Manage froyo-agent service (for agent mode)
+  - name: Enable and start froyo-agent
+    module: generic/service
+    vars:
+      name: froyo-agent
+      state: started
+      enabled: true
+      daemon_reload: true

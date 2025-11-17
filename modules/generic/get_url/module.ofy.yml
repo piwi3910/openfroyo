@@ -1,0 +1,97 @@
+name: get_url
+description: Download files from HTTP/HTTPS URLs with checksum verification
+version: 1.0.0
+author: OpenFroyo
+
+facts:
+  - name: shell_exec
+    description: Shell commands to execute for downloading file
+
+variables:
+  - name: url
+    description: HTTP/HTTPS URL to download from
+    required: true
+    type: string
+
+  - name: dest
+    description: Absolute path where file should be downloaded
+    required: true
+    type: string
+
+  - name: checksum
+    description: Checksum in format "algorithm:hash" (e.g., sha256:abc123...)
+    required: false
+    type: string
+
+  - name: mode
+    description: File permissions in octal format (e.g., '0755')
+    required: false
+    type: string
+    default: '0644'
+
+  - name: owner
+    description: Owner of the downloaded file
+    required: false
+    type: string
+
+  - name: group
+    description: Group of the downloaded file
+    required: false
+    type: string
+
+  - name: force
+    description: Force download even if file exists
+    required: false
+    type: bool
+    default: false
+
+  - name: timeout
+    description: Timeout in seconds for HTTP request
+    required: false
+    type: int
+    default: 60
+
+  - name: headers
+    description: Custom HTTP headers as key-value pairs
+    required: false
+    type: map
+
+  - name: validate_certs
+    description: Validate SSL/TLS certificates
+    required: false
+    type: bool
+    default: true
+
+  - name: follow_redirects
+    description: Follow HTTP redirects
+    required: false
+    type: bool
+    default: true
+
+  - name: username
+    description: Username for HTTP basic auth
+    required: false
+    type: string
+
+  - name: password
+    description: Password for HTTP basic auth
+    required: false
+    type: string
+
+steps:
+  - name: Download file from URL
+    wasm: wasm/get_url.wasm
+    input:
+      url: "{{ var.url }}"
+      dest: "{{ var.dest }}"
+      checksum: "{{ var.checksum | default('') }}"
+      mode: "{{ var.mode | default('0644') }}"
+      owner: "{{ var.owner | default('') }}"
+      group: "{{ var.group | default('') }}"
+      force: "{{ var.force | default(false) }}"
+      timeout: "{{ var.timeout | default(60) }}"
+      headers: "{{ var.headers | default({}) }}"
+      validate_certs: "{{ var.validate_certs | default(true) }}"
+      follow_redirects: "{{ var.follow_redirects | default(true) }}"
+      username: "{{ var.username | default('') }}"
+      password: "{{ var.password | default('') }}"

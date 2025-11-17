@@ -1,0 +1,107 @@
+name: Onboard Server to Agent Mode
+description: Convert SSH-based server to pull-mode agent
+
+inventory:
+  hosts:
+    - name: web-01
+      ssh_host: 192.168.1.10
+      ssh_user: root
+    - name: web-02
+      ssh_host: 192.168.1.11
+      ssh_user: root
+
+defaults:
+  agent_version: "1.0.0"
+  agent_url: "https://github.com/piwi3910/openfroyo/releases/download/v{{ agent_version }}/froyo-agent-linux-amd64"
+  agent_checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  nats_server: "nats://nats.openfroyo.example.com:4222"
+  datacenter: "dc1"
+
+run:
+  # Step 1: Create froyo user and group
+  - name: Create froyo group
+    module: linux/group
+    vars:
+      name: froyo
+      state: present
+      system: true
+
+  - name: Create froyo user
+    module: linux/user
+    vars:
+      name: froyo
+      group: froyo
+      system: true
+      create_home: true
+      home: /var/lib/froyo
+      shell: /bin/bash
+      comment: "OpenFroyo Agent Service Account"
+
+  # Step 2: Create required directories
+  - name: Create agent directories
+    module: generic/file
+    vars:
+      path: "{{ item }}"
+      state: directory
+      mode: '0755'
+      owner: froyo
+      group: froyo
+    loop:
+      - /etc/froyo
+      - /var/lib/froyo
+      - /var/log/froyo
+      - /usr/local/bin
+
+  # Step 3: Download froyo-agent binary
+  - name: Download froyo-agent binary
+    module: generic/get_url
+    vars:
+      url: "{{ agent_url }}"
+      dest: /usr/local/bin/froyo-agent
+      mode: '0755'
+      owner: root
+      group: root
+      checksum: "{{ agent_checksum }}"
+      force: false
+
+  # Step 4: Create agent configuration file
+  - name: Create agent configuration
+    module: generic/template
+    vars:
+      src: templates/agent-config.yml.j2
+      dest: /etc/froyo/agent.yml
+      mode: '0644'
+      owner: froyo
+      group: froyo
+
+  # Step 5: Create systemd unit file
+  - name: Create systemd unit file
+    module: generic/template
+    vars:
+      src: templates/froyo-agent.service.j2
+      dest: /etc/systemd/system/froyo-agent.service
+      mode: '0644'
+      owner: root
+      group: root
+
+  # Step 6: Enable and start froyo-agent service
+  - name: Enable and start froyo-agent
+    module: generic/service
+    vars:
+      name: froyo-agent
+      state: started
+      enabled: true
+      daemon_reload: true
+      sleep: 2
+
+  # Step 7: Verify agent is running
+  - name: Check agent status
+    module: generic/command
+    vars:
+      cmd: systemctl status froyo-agent --no-pager
+
+  # Step 8: Test connectivity to NATS
+  - name: Verify NATS connectivity
+    module: generic/command
+    vars:
+      cmd: journalctl -u froyo-agent -n 50 --no-pager | grep -i "connected to nats"

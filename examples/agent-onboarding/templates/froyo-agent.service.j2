@@ -1,0 +1,43 @@
+[Unit]
+Description=OpenFroyo Agent - Pull Mode Infrastructure Automation
+Documentation=https://github.com/piwi3910/openfroyo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=froyo
+Group=froyo
+
+# Agent binary and configuration
+ExecStart=/usr/local/bin/froyo-agent --config /etc/froyo/agent.yml
+
+# Restart configuration
+Restart=always
+RestartSec=5s
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Working directory
+WorkingDirectory=/var/lib/froyo
+
+# Environment
+Environment="FROYO_DATACENTER={{ datacenter }}"
+Environment="FROYO_AGENT_ID={{ inventory_hostname }}"
+
+# Security hardening
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/froyo /var/log/froyo
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=froyo-agent
+
+[Install]
+WantedBy=multi-user.target

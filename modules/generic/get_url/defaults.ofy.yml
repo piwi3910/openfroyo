@@ -1,0 +1,20 @@
+---
+# Default variables for get_url module
+
+# File permissions (octal format)
+mode: '0644'
+
+# Force download even if file exists
+force: false
+
+# HTTP timeout in seconds
+timeout: 60
+
+# Validate SSL/TLS certificates
+validate_certs: true
+
+# Follow HTTP redirects
+follow_redirects: true
+
+# Custom headers (empty by default)
+headers: {}
