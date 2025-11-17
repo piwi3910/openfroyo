@@ -1,0 +1,175 @@
+name: AWS Module Test Suite
+description: Comprehensive tests for AWS cloud management module
+
+inventory:
+  hosts:
+    - localhost
+
+defaults:
+  aws_region: us-east-1
+  test_vpc_cidr: 10.99.0.0/16
+  test_subnet_cidr: 10.99.1.0/24
+  test_bucket_name: openfroyo-test-bucket-{{ timestamp }}
+
+run:
+  # ==================== EC2 Tests ====================
+  - name: Test - List EC2 instance types
+    module: cloud/aws
+    vars:
+      command: describe_instance_types
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Describe EC2 instances
+    module: cloud/aws
+    vars:
+      command: describe_instances
+      aws_region: "{{ var.aws_region }}"
+
+  # ==================== S3 Tests ====================
+  - name: Test - List S3 buckets
+    module: cloud/aws
+    vars:
+      command: list_buckets
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Create S3 bucket
+    module: cloud/aws
+    vars:
+      command: create_bucket
+      bucket_name: "{{ var.test_bucket_name }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - List objects in bucket
+    module: cloud/aws
+    vars:
+      command: list_objects
+      bucket_name: "{{ var.test_bucket_name }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Delete S3 bucket
+    module: cloud/aws
+    vars:
+      command: delete_bucket
+      bucket_name: "{{ var.test_bucket_name }}"
+      aws_region: "{{ var.aws_region }}"
+
+  # ==================== VPC Tests ====================
+  - name: Test - Create VPC
+    module: cloud/aws
+    vars:
+      command: create_vpc
+      cidr_block: "{{ var.test_vpc_cidr }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Create subnet
+    module: cloud/aws
+    vars:
+      command: create_subnet
+      vpc_id: "{{ facts.vpc_id }}"
+      cidr_block: "{{ var.test_subnet_cidr }}"
+      availability_zone: us-east-1a
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Create security group
+    module: cloud/aws
+    vars:
+      command: create_security_group
+      security_group_name: openfroyo-test-sg
+      security_group_description: OpenFroyo test security group
+      vpc_id: "{{ facts.vpc_id }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Describe security groups
+    module: cloud/aws
+    vars:
+      command: describe_security_groups
+      security_group_id: "{{ facts.security_group_id }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Authorize security group ingress
+    module: cloud/aws
+    vars:
+      command: authorize_security_group_ingress
+      security_group_id: "{{ facts.security_group_id }}"
+      ip_protocol: tcp
+      from_port: 80
+      to_port: 80
+      cidr_ip: 0.0.0.0/0
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Delete security group
+    module: cloud/aws
+    vars:
+      command: delete_security_group
+      security_group_id: "{{ facts.security_group_id }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Delete subnet
+    module: cloud/aws
+    vars:
+      command: delete_subnet
+      subnet_id: "{{ facts.subnet_id }}"
+      aws_region: "{{ var.aws_region }}"
+
+  - name: Test - Delete VPC
+    module: cloud/aws
+    vars:
+      command: delete_vpc
+      vpc_id: "{{ facts.vpc_id }}"
+      aws_region: "{{ var.aws_region }}"
+
+  # ==================== IAM Tests ====================
+  - name: Test - Create IAM user
+    module: cloud/aws
+    vars:
+      command: create_user
+      user_name: openfroyo-test-user
+
+  - name: Test - Create access key
+    module: cloud/aws
+    vars:
+      command: create_access_key
+      user_name: openfroyo-test-user
+
+  - name: Test - Delete IAM user
+    module: cloud/aws
+    vars:
+      command: delete_user
+      user_name: openfroyo-test-user
+
+  # ==================== RDS Tests ====================
+  - name: Test - Describe RDS instances
+    module: cloud/aws
+    vars:
+      command: describe_db_instances
+      aws_region: "{{ var.aws_region }}"
+
+  # ==================== Lambda Tests ====================
+  # Note: Lambda tests require function code ZIP files
+  # Uncomment when test ZIP files are available
+  #
+  # - name: Test - Create Lambda function
+  #   module: cloud/aws
+  #   vars:
+  #     command: create_function
+  #     function_name: openfroyo-test-function
+  #     runtime: python3.9
+  #     handler: index.handler
+  #     lambda_role: arn:aws:iam::123456789012:role/lambda-role
+  #     zip_file: /path/to/test-function.zip
+  #     aws_region: "{{ var.aws_region }}"
+  #
+  # - name: Test - Invoke Lambda function
+  #   module: cloud/aws
+  #   vars:
+  #     command: invoke_function
+  #     function_name: openfroyo-test-function
+  #     payload: '{"test": "data"}'
+  #     aws_region: "{{ var.aws_region }}"
+  #
+  # - name: Test - Delete Lambda function
+  #   module: cloud/aws
+  #   vars:
+  #     command: delete_function
+  #     function_name: openfroyo-test-function
+  #     aws_region: "{{ var.aws_region }}"

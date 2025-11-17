@@ -1,0 +1,23 @@
+name: galeradb
+description: Comprehensive Galera Cluster management module
+version: 1.0.0
+
+steps:
+  - name: Execute Galera operation
+    wasm: wasm/galeradb.wasm
+    input:
+      galera_host: "{{ var.galera_host }}"
+      galera_port: "{{ var.galera_port }}"
+      galera_user: "{{ var.galera_user }}"
+      galera_password: "{{ var.galera_password }}"
+      command: "{{ var.command }}"
+      cluster_address: "{{ var.cluster_address }}"
+      cluster_name: "{{ var.cluster_name }}"
+      node_address: "{{ var.node_address }}"
+      node_name: "{{ var.node_name }}"
+      safe_to_bootstrap: "{{ var.safe_to_bootstrap }}"
+      grastate_file: "{{ var.grastate_file }}"
+      mysql_service: "{{ var.mysql_service }}"
+      command_timeout: "{{ var.command_timeout }}"
+      query_limit: "{{ var.query_limit }}"
+      show_all: "{{ var.show_all }}"

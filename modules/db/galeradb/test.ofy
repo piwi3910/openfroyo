@@ -1,0 +1,106 @@
+# Test stack for Galera Cluster management module
+
+inventory: test-inventory
+defaults:
+  galera_host: localhost
+  galera_port: 3306
+  galera_user: root
+  galera_password: test_password
+
+run:
+  # Cluster Management Tests
+  - name: Check cluster status
+    module: db/galeradb
+    vars:
+      command: show_cluster_status
+
+  - name: Check cluster size
+    module: db/galeradb
+    vars:
+      command: show_cluster_size
+
+  - name: Check node status
+    module: db/galeradb
+    vars:
+      command: check_node_status
+
+  - name: Show wsrep status
+    module: db/galeradb
+    vars:
+      command: show_wsrep_status
+
+  # Node Management Tests
+  - name: Check if node is synced
+    module: db/galeradb
+    vars:
+      command: check_node_synced
+
+  - name: Show node state
+    module: db/galeradb
+    vars:
+      command: show_node_state
+
+  # Replication Monitoring Tests
+  - name: Show replication status
+    module: db/galeradb
+    vars:
+      command: show_replication_status
+
+  - name: Show flow control
+    module: db/galeradb
+    vars:
+      command: show_flow_control
+
+  - name: Show apply lag
+    module: db/galeradb
+    vars:
+      command: show_apply_lag
+
+  - name: Show conflicts
+    module: db/galeradb
+    vars:
+      command: show_conflicts
+
+  - name: Show queue size
+    module: db/galeradb
+    vars:
+      command: show_queue_size
+
+  # Recovery Operations Tests
+  - name: Check grastate
+    module: db/galeradb
+    vars:
+      command: check_grastate
+      grastate_file: /var/lib/mysql/grastate.dat
+
+  # Advanced cluster operations (commented out - require careful execution)
+  # - name: Set cluster address
+  #   module: db/galeradb
+  #   vars:
+  #     command: set_cluster_address
+  #     cluster_address: gcomm://node1,node2,node3
+
+  # - name: Set safe to bootstrap
+  #   module: db/galeradb
+  #   vars:
+  #     command: set_safe_to_bootstrap
+  #     safe_to_bootstrap: 1
+  #     grastate_file: /var/lib/mysql/grastate.dat
+
+  # - name: Bootstrap cluster
+  #   module: db/galeradb
+  #   vars:
+  #     command: bootstrap_cluster
+  #     mysql_service: mysql
+
+  # - name: Join cluster
+  #   module: db/galeradb
+  #   vars:
+  #     command: join_cluster
+  #     cluster_address: gcomm://node1,node2,node3
+
+  # - name: Restart node
+  #   module: db/galeradb
+  #   vars:
+  #     command: restart_node
+  #     mysql_service: mysql

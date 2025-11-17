@@ -1,0 +1,20 @@
+# Default variables for AWS module
+aws_region: us-east-1
+aws_profile: default
+output_format: json
+wait: false
+
+# EC2 defaults
+instance_type: t3.micro
+
+# RDS defaults
+db_instance_class: db.t3.micro
+engine: mysql
+allocated_storage: 20
+
+# Lambda defaults
+runtime: python3.9
+handler: index.handler
+
+# Security defaults
+ip_protocol: tcp

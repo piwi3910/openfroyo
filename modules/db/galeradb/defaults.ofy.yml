@@ -1,0 +1,30 @@
+# Default variables for Galera Cluster management module
+
+# Connection settings
+galera_host: localhost
+galera_port: 3306
+galera_user: root
+galera_password: ""
+
+# Operation to perform
+command: show_cluster_status
+
+# Cluster configuration
+cluster_address: ""  # gcomm://node1,node2,node3
+cluster_name: "galera_cluster"
+node_address: ""     # IP address of this node
+node_name: ""        # Name of this node
+
+# Bootstrap parameters
+safe_to_bootstrap: 0  # 0 or 1
+grastate_file: "/var/lib/mysql/grastate.dat"
+
+# Service configuration
+mysql_service: "mysql"  # or "mariadb" or "mysqld"
+
+# Command timeout (seconds)
+command_timeout: 30
+
+# Query parameters
+query_limit: 100
+show_all: false
