@@ -1,0 +1,371 @@
+name: PostgreSQL Module Test Suite
+description: Comprehensive test for all PostgreSQL module commands
+
+# Test inventory - adjust for your environment
+inventory: localhost
+
+# Default connection settings
+defaults:
+  postgresql_host: localhost
+  postgresql_port: 5432
+  postgresql_user: postgres
+  postgresql_password: ""  # Use .pgpass file or set here
+  postgresql_database: postgres
+
+run:
+  # ====================
+  # DATABASE MANAGEMENT
+  # ====================
+
+  - name: "Test: Create test database"
+    module: db/postgresql
+    vars:
+      command: create_database
+      database_name: openfroyo_test
+      owner: postgres
+      encoding: UTF8
+
+  - name: "Test: Check database exists"
+    module: db/postgresql
+    vars:
+      command: check_database_exists
+      database_name: openfroyo_test
+
+  - name: "Test: List databases"
+    module: db/postgresql
+    vars:
+      command: list_databases
+
+  - name: "Test: Show database size"
+    module: db/postgresql
+    vars:
+      command: show_database_size
+      database_name: openfroyo_test
+
+  - name: "Test: Create second database for rename test"
+    module: db/postgresql
+    vars:
+      command: create_database
+      database_name: openfroyo_rename_test
+      encoding: UTF8
+
+  - name: "Test: Rename database"
+    module: db/postgresql
+    vars:
+      command: rename_database
+      old_name: openfroyo_rename_test
+      new_name: openfroyo_renamed
+
+  # ====================
+  # USER/ROLE MANAGEMENT
+  # ====================
+
+  - name: "Test: Create test user"
+    module: db/postgresql
+    vars:
+      command: create_user
+      user_name: openfroyo_user
+      user_password: test_password_123
+      createdb: true
+      createrole: false
+      superuser: false
+
+  - name: "Test: List users"
+    module: db/postgresql
+    vars:
+      command: list_users
+
+  - name: "Test: Alter user password"
+    module: db/postgresql
+    vars:
+      command: alter_user
+      user_name: openfroyo_user
+      user_password: new_password_456
+
+  - name: "Test: Create role"
+    module: db/postgresql
+    vars:
+      command: create_role
+      role_name: openfroyo_readers
+
+  - name: "Test: Grant privileges"
+    module: db/postgresql
+    vars:
+      command: grant_privileges
+      database_name: openfroyo_test
+      user_name: openfroyo_user
+      privileges: ALL
+
+  - name: "Test: Revoke privileges"
+    module: db/postgresql
+    vars:
+      command: revoke_privileges
+      database_name: openfroyo_test
+      user_name: openfroyo_user
+      privileges: INSERT,UPDATE,DELETE
+
+  - name: "Test: Grant privileges again"
+    module: db/postgresql
+    vars:
+      command: grant_privileges
+      database_name: openfroyo_test
+      user_name: openfroyo_user
+      privileges: ALL
+
+  # ====================
+  # SCHEMA MANAGEMENT
+  # ====================
+
+  - name: "Test: Create schema"
+    module: db/postgresql
+    vars:
+      command: create_schema
+      postgresql_database: openfroyo_test
+      schema_name: test_schema
+      owner: openfroyo_user
+
+  - name: "Test: List schemas"
+    module: db/postgresql
+    vars:
+      command: list_schemas
+      postgresql_database: openfroyo_test
+
+  - name: "Test: Set search path"
+    module: db/postgresql
+    vars:
+      command: set_search_path
+      postgresql_database: openfroyo_test
+      search_path: test_schema,public
+
+  - name: "Test: Create second schema for drop test"
+    module: db/postgresql
+    vars:
+      command: create_schema
+      postgresql_database: openfroyo_test
+      schema_name: temp_schema
+
+  # ====================
+  # EXTENSION MANAGEMENT
+  # ====================
+
+  - name: "Test: Create uuid-ossp extension"
+    module: db/postgresql
+    vars:
+      command: create_extension
+      postgresql_database: openfroyo_test
+      extension_name: uuid-ossp
+
+  - name: "Test: Create pg_trgm extension"
+    module: db/postgresql
+    vars:
+      command: create_extension
+      postgresql_database: openfroyo_test
+      extension_name: pg_trgm
+
+  - name: "Test: List extensions"
+    module: db/postgresql
+    vars:
+      command: list_extensions
+      postgresql_database: openfroyo_test
+
+  # ====================
+  # QUERY EXECUTION
+  # ====================
+
+  - name: "Test: Execute query - create table"
+    module: db/postgresql
+    vars:
+      command: execute_query
+      postgresql_database: openfroyo_test
+      query: |
+        CREATE TABLE IF NOT EXISTS test_schema.users (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(50) NOT NULL,
+          email VARCHAR(100) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+
+  - name: "Test: Execute query - insert data"
+    module: db/postgresql
+    vars:
+      command: execute_query
+      postgresql_database: openfroyo_test
+      query: |
+        INSERT INTO test_schema.users (username, email)
+        VALUES ('testuser1', 'test1@example.com'),
+               ('testuser2', 'test2@example.com'),
+               ('testuser3', 'test3@example.com')
+
+  - name: "Test: Execute query - select data"
+    module: db/postgresql
+    vars:
+      command: execute_query
+      postgresql_database: openfroyo_test
+      query: "SELECT COUNT(*) FROM test_schema.users"
+
+  - name: "Test: Show activity"
+    module: db/postgresql
+    vars:
+      command: show_activity
+      postgresql_database: openfroyo_test
+
+  # ====================
+  # TABLE MANAGEMENT
+  # ====================
+
+  - name: "Test: List tables"
+    module: db/postgresql
+    vars:
+      command: list_tables
+      postgresql_database: openfroyo_test
+      schema_name: test_schema
+
+  - name: "Test: Describe table"
+    module: db/postgresql
+    vars:
+      command: describe_table
+      postgresql_database: openfroyo_test
+      table_name: test_schema.users
+
+  - name: "Test: Analyze table"
+    module: db/postgresql
+    vars:
+      command: analyze_table
+      postgresql_database: openfroyo_test
+      table_name: test_schema.users
+
+  - name: "Test: Vacuum table"
+    module: db/postgresql
+    vars:
+      command: vacuum_table
+      postgresql_database: openfroyo_test
+      table_name: test_schema.users
+      full: false
+      analyze: true
+
+  - name: "Test: Analyze entire database"
+    module: db/postgresql
+    vars:
+      command: analyze_table
+      postgresql_database: openfroyo_test
+
+  # ====================
+  # BACKUP AND RESTORE
+  # ====================
+
+  - name: "Test: Backup database (plain format)"
+    module: db/postgresql
+    vars:
+      command: backup_database
+      database_name: openfroyo_test
+      backup_file: /tmp/openfroyo_test_plain.sql
+      format: plain
+
+  - name: "Test: Backup database (custom format)"
+    module: db/postgresql
+    vars:
+      command: backup_database
+      database_name: openfroyo_test
+      backup_file: /tmp/openfroyo_test_custom.dump
+      format: custom
+
+  - name: "Test: Create restore target database"
+    module: db/postgresql
+    vars:
+      command: create_database
+      database_name: openfroyo_test_restored
+      owner: postgres
+
+  - name: "Test: Restore database from custom backup"
+    module: db/postgresql
+    vars:
+      command: restore_database
+      database_name: openfroyo_test_restored
+      backup_file: /tmp/openfroyo_test_custom.dump
+
+  - name: "Test: Verify restored data"
+    module: db/postgresql
+    vars:
+      command: execute_query
+      postgresql_database: openfroyo_test_restored
+      query: "SELECT COUNT(*) FROM test_schema.users"
+
+  - name: "Test: Show restored database size"
+    module: db/postgresql
+    vars:
+      command: show_database_size
+      database_name: openfroyo_test_restored
+
+  # ====================
+  # CLEANUP
+  # ====================
+
+  - name: "Test: Drop temp schema (cascade)"
+    module: db/postgresql
+    vars:
+      command: drop_schema
+      postgresql_database: openfroyo_test
+      schema_name: temp_schema
+      cascade: true
+
+  - name: "Test: Drop pg_trgm extension"
+    module: db/postgresql
+    vars:
+      command: drop_extension
+      postgresql_database: openfroyo_test
+      extension_name: pg_trgm
+
+  - name: "Test: Drop role"
+    module: db/postgresql
+    vars:
+      command: drop_role
+      role_name: openfroyo_readers
+
+  - name: "Test: Revoke all privileges from test user"
+    module: db/postgresql
+    vars:
+      command: revoke_privileges
+      database_name: openfroyo_test
+      user_name: openfroyo_user
+      privileges: ALL
+
+  - name: "Test: Drop test user"
+    module: db/postgresql
+    vars:
+      command: drop_user
+      user_name: openfroyo_user
+
+  - name: "Test: Drop restored database"
+    module: db/postgresql
+    vars:
+      command: drop_database
+      database_name: openfroyo_test_restored
+
+  - name: "Test: Drop renamed database"
+    module: db/postgresql
+    vars:
+      command: drop_database
+      database_name: openfroyo_renamed
+
+  - name: "Test: Drop test database"
+    module: db/postgresql
+    vars:
+      command: drop_database
+      database_name: openfroyo_test
+
+  - name: "Test: Cleanup backup files"
+    shell: rm -f /tmp/openfroyo_test_plain.sql /tmp/openfroyo_test_custom.dump
+
+  # ====================
+  # FINAL VERIFICATION
+  # ====================
+
+  - name: "Test: Verify all test databases cleaned up"
+    module: db/postgresql
+    vars:
+      command: list_databases
+
+  - name: "Test: Verify all test users cleaned up"
+    module: db/postgresql
+    vars:
+      command: list_users

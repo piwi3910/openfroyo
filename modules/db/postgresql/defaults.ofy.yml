@@ -1,0 +1,46 @@
+# PostgreSQL Module Default Variables
+
+# Connection Settings
+postgresql_host: localhost
+postgresql_port: 5432
+postgresql_user: postgres
+postgresql_password: ""
+postgresql_database: postgres
+
+# Database Settings
+database_name: ""
+owner: ""
+encoding: UTF8
+
+# User/Role Settings
+user_name: ""
+user_password: ""
+superuser: false
+createdb: false
+createrole: false
+role_name: ""
+privileges: ALL
+
+# Schema Settings
+schema_name: public
+search_path: ""
+cascade: false
+
+# Table Settings
+table_name: ""
+full: false
+analyze: false
+
+# Extension Settings
+extension_name: ""
+
+# Query Settings
+query: ""
+script_file: ""
+
+# Backup Settings
+backup_file: ""
+format: plain  # Options: plain, custom, directory, tar
+
+# Operation Command (required)
+command: ""

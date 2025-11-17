@@ -1,0 +1,53 @@
+name: postgresql
+description: Comprehensive PostgreSQL database management module
+version: 1.0.0
+
+steps:
+  - name: Execute PostgreSQL Command
+    wasm: wasm/postgresql.wasm
+    input:
+      command: "{{ var.command }}"
+
+      # Connection parameters
+      postgresql_host: "{{ var.postgresql_host | default('localhost') }}"
+      postgresql_port: "{{ var.postgresql_port | default('5432') }}"
+      postgresql_user: "{{ var.postgresql_user | default('postgres') }}"
+      postgresql_password: "{{ var.postgresql_password | default('') }}"
+      postgresql_database: "{{ var.postgresql_database | default('postgres') }}"
+
+      # Database parameters
+      database_name: "{{ var.database_name | default('') }}"
+      owner: "{{ var.owner | default('') }}"
+      encoding: "{{ var.encoding | default('UTF8') }}"
+      old_name: "{{ var.old_name | default('') }}"
+      new_name: "{{ var.new_name | default('') }}"
+
+      # User/Role parameters
+      user_name: "{{ var.user_name | default('') }}"
+      user_password: "{{ var.user_password | default('') }}"
+      superuser: "{{ var.superuser | default(false) }}"
+      createdb: "{{ var.createdb | default(false) }}"
+      createrole: "{{ var.createrole | default(false) }}"
+      role_name: "{{ var.role_name | default('') }}"
+      privileges: "{{ var.privileges | default('ALL') }}"
+
+      # Schema parameters
+      schema_name: "{{ var.schema_name | default('public') }}"
+      search_path: "{{ var.search_path | default('') }}"
+      cascade: "{{ var.cascade | default(false) }}"
+
+      # Table parameters
+      table_name: "{{ var.table_name | default('') }}"
+      full: "{{ var.full | default(false) }}"
+      analyze: "{{ var.analyze | default(false) }}"
+
+      # Extension parameters
+      extension_name: "{{ var.extension_name | default('') }}"
+
+      # Query parameters
+      query: "{{ var.query | default('') }}"
+      script_file: "{{ var.script_file | default('') }}"
+
+      # Backup parameters
+      backup_file: "{{ var.backup_file | default('') }}"
+      format: "{{ var.format | default('plain') }}"
