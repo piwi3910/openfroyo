@@ -1,0 +1,26 @@
+name: mariadb
+description: Comprehensive MariaDB/MySQL database management module
+version: 1.0.0
+author: OpenFroyo
+
+steps:
+  - name: Execute MariaDB operation
+    wasm: wasm/mariadb.wasm
+    input:
+      host: "{{ mariadb_host | default('localhost') }}"
+      port: "{{ mariadb_port | default(3306) }}"
+      user: "{{ mariadb_user | default('root') }}"
+      password: "{{ mariadb_password }}"
+      socket: "{{ mariadb_socket | default('') }}"
+      command: "{{ command }}"
+      database_name: "{{ database_name | default('') }}"
+      user_name: "{{ user_name | default('') }}"
+      user_password: "{{ user_password | default('') }}"
+      user_host: "{{ user_host | default('localhost') }}"
+      privileges: "{{ privileges | default('ALL') }}"
+      table_name: "{{ table_name | default('') }}"
+      query: "{{ query | default('') }}"
+      script_file: "{{ script_file | default('') }}"
+      backup_file: "{{ backup_file | default('') }}"
+      charset: "{{ charset | default('utf8mb4') }}"
+      collation: "{{ collation | default('utf8mb4_unicode_ci') }}"

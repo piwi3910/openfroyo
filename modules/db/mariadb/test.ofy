@@ -1,0 +1,338 @@
+name: MariaDB Module Test Suite
+inventory: inventory/
+defaults:
+  mariadb_host: localhost
+  mariadb_port: 3306
+  mariadb_user: root
+  mariadb_password: testpass123
+  mariadb_socket: ""
+
+run:
+  # ============================================================================
+  # Database Management Tests
+  # ============================================================================
+
+  - name: "Test: Create test database"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: create_database
+      database_name: openfroyo_test
+      charset: utf8mb4
+      collation: utf8mb4_unicode_ci
+
+  - name: "Test: Check database exists"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: check_database_exists
+      database_name: openfroyo_test
+
+  - name: "Test: List all databases"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: list_databases
+
+  - name: "Test: Show database size"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_database_size
+      database_name: openfroyo_test
+
+  # ============================================================================
+  # User Management Tests
+  # ============================================================================
+
+  - name: "Test: Create test user"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: create_user
+      user_name: froyo_testuser
+      user_password: testuser123
+      user_host: localhost
+
+  - name: "Test: List all users"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: list_users
+
+  - name: "Test: Grant privileges to user"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: grant_privileges
+      database_name: openfroyo_test
+      user_name: froyo_testuser
+      user_host: localhost
+      privileges: ALL
+
+  - name: "Test: Show user grants"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_user_grants
+      user_name: froyo_testuser
+      user_host: localhost
+
+  - name: "Test: Change user password"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: change_password
+      user_name: froyo_testuser
+      user_host: localhost
+      user_password: newpassword456
+
+  # ============================================================================
+  # Table Management Tests
+  # ============================================================================
+
+  - name: "Test: Create test table"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_query
+      database_name: openfroyo_test
+      query: >
+        CREATE TABLE IF NOT EXISTS test_users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(50) NOT NULL UNIQUE,
+          email VARCHAR(100) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+
+  - name: "Test: List tables"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: list_tables
+      database_name: openfroyo_test
+
+  - name: "Test: Describe table"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: describe_table
+      database_name: openfroyo_test
+      table_name: test_users
+
+  - name: "Test: Insert test data"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_query
+      database_name: openfroyo_test
+      query: >
+        INSERT INTO test_users (username, email)
+        VALUES ('testuser1', 'test1@example.com'),
+               ('testuser2', 'test2@example.com'),
+               ('testuser3', 'test3@example.com')
+
+  - name: "Test: Optimize table"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: optimize_table
+      database_name: openfroyo_test
+      table_name: test_users
+
+  # ============================================================================
+  # Query Execution Tests
+  # ============================================================================
+
+  - name: "Test: Execute SELECT query"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_query
+      database_name: openfroyo_test
+      query: "SELECT * FROM test_users"
+
+  - name: "Test: Execute UPDATE query"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_query
+      database_name: openfroyo_test
+      query: "UPDATE test_users SET email = 'updated@example.com' WHERE username = 'testuser1'"
+
+  - name: "Test: Show processlist"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_processlist
+
+  # ============================================================================
+  # Backup and Restore Tests
+  # ============================================================================
+
+  - name: "Test: Backup database"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: backup_database
+      database_name: openfroyo_test
+      backup_file: /tmp/openfroyo_test_backup.sql
+
+  - name: "Test: Create restore test database"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: create_database
+      database_name: openfroyo_test_restore
+
+  - name: "Test: Restore database"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: restore_database
+      database_name: openfroyo_test_restore
+      backup_file: /tmp/openfroyo_test_backup.sql
+
+  - name: "Test: Verify restored data"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_query
+      database_name: openfroyo_test_restore
+      query: "SELECT COUNT(*) as user_count FROM test_users"
+
+  # ============================================================================
+  # Replication Tests (Optional - requires replication setup)
+  # ============================================================================
+
+  - name: "Test: Show master status"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_master_status
+    continue_on_error: true
+
+  - name: "Test: Show slave status"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_slave_status
+    continue_on_error: true
+
+  # ============================================================================
+  # Advanced Query Tests
+  # ============================================================================
+
+  - name: "Test: Create SQL script file"
+    run: tasks
+    on: localhost
+    tasks:
+      - wasm: system/file_write.wasm
+        vars:
+          path: /tmp/test_script.sql
+          content: |
+            CREATE TABLE IF NOT EXISTS test_sessions (
+              session_id VARCHAR(128) PRIMARY KEY,
+              user_id INT,
+              data TEXT,
+              expires TIMESTAMP
+            );
+
+            INSERT INTO test_sessions (session_id, user_id, data, expires)
+            VALUES ('sess_123', 1, 'test data', NOW() + INTERVAL 1 HOUR);
+
+  - name: "Test: Execute SQL script"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: execute_script
+      database_name: openfroyo_test
+      script_file: /tmp/test_script.sql
+
+  - name: "Test: Verify script execution"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: list_tables
+      database_name: openfroyo_test
+
+  # ============================================================================
+  # Privilege Revocation Tests
+  # ============================================================================
+
+  - name: "Test: Revoke specific privileges"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: revoke_privileges
+      database_name: openfroyo_test
+      user_name: froyo_testuser
+      user_host: localhost
+      privileges: DELETE,DROP
+
+  - name: "Test: Verify privileges revoked"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: show_user_grants
+      user_name: froyo_testuser
+      user_host: localhost
+
+  # ============================================================================
+  # Cleanup Tests
+  # ============================================================================
+
+  - name: "Cleanup: Drop test user"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: drop_user
+      user_name: froyo_testuser
+      user_host: localhost
+
+  - name: "Cleanup: Drop test databases"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: drop_database
+      database_name: openfroyo_test
+
+  - name: "Cleanup: Drop restore test database"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: drop_database
+      database_name: openfroyo_test_restore
+
+  - name: "Cleanup: Remove backup file"
+    run: tasks
+    on: localhost
+    tasks:
+      - wasm: system/file_delete.wasm
+        vars:
+          path: /tmp/openfroyo_test_backup.sql
+
+  - name: "Cleanup: Remove script file"
+    run: tasks
+    on: localhost
+    tasks:
+      - wasm: system/file_delete.wasm
+        vars:
+          path: /tmp/test_script.sql
+
+  # ============================================================================
+  # Final Verification
+  # ============================================================================
+
+  - name: "Verify: Test database removed"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: check_database_exists
+      database_name: openfroyo_test
+
+  - name: "Verify: List final database state"
+    run: db/mariadb
+    on: localhost
+    vars:
+      command: list_databases

@@ -1,0 +1,30 @@
+# MariaDB Module Defaults
+
+# Connection settings
+mariadb_host: localhost
+mariadb_port: 3306
+mariadb_user: root
+mariadb_password: ""
+mariadb_socket: ""  # Optional: /var/run/mysqld/mysqld.sock
+
+# Database settings
+charset: utf8mb4
+collation: utf8mb4_unicode_ci
+
+# User settings
+user_host: localhost  # Use '%' for any host
+
+# Privilege settings
+privileges: ALL  # Can be: ALL, SELECT, INSERT, UPDATE, DELETE, etc.
+
+# Command to execute
+command: ""
+
+# Operation-specific parameters
+database_name: ""
+user_name: ""
+user_password: ""
+table_name: ""
+query: ""
+script_file: ""
+backup_file: ""
