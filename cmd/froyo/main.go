@@ -14,6 +14,7 @@ import (
 	orchestratorExecutor "github.com/piwi3910/openfroyo/internal/orchestrator/executor"
 	orchestratorNats "github.com/piwi3910/openfroyo/internal/orchestrator/nats"
 	"github.com/piwi3910/openfroyo/internal/parser"
+	"github.com/piwi3910/openfroyo/internal/validator"
 )
 
 func main() {
@@ -37,6 +38,12 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "validate":
+		if err := runValidate(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	case "onboard":
 		if err := runOnboard(os.Args[2:]); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -54,6 +61,7 @@ func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  froyo apply <stack.ofy> [options]          - Execute a stack")
 	fmt.Println("  froyo plan <stack.ofy> [options]           - Show execution plan (dry run)")
+	fmt.Println("  froyo validate <stack.ofy>                 - Validate a stack file")
 	fmt.Println("  froyo onboard [options]                    - Set up openfroyo user on remote host")
 	fmt.Println()
 	fmt.Println("Apply/Plan options:")
@@ -61,6 +69,8 @@ func printUsage() {
 	fmt.Println("  --nats-token <token>   NATS authentication token")
 	fmt.Println("  --from <name>          Start execution from named entry")
 	fmt.Println("  --until <name>         Stop execution after named entry")
+	fmt.Println("  --verbose, -v          Show detailed task execution info")
+	fmt.Println("  --debug, -d            Show full execution trace")
 	fmt.Println()
 	fmt.Println("Onboard options:")
 	fmt.Println("  --host <ip>            Remote host IP or hostname (required)")
@@ -68,6 +78,36 @@ func printUsage() {
 	fmt.Println("  --password <pass>      SSH password (required)")
 	fmt.Println("  --port <port>          SSH port (default: 22)")
 	fmt.Println("  --inventory <file>     Inventory file to update")
+}
+
+func runValidate(args []string) error {
+	fs := flag.NewFlagSet("validate", flag.ExitOnError)
+	fs.Parse(args)
+
+	if fs.NArg() < 1 {
+		fmt.Println("Usage: froyo validate <stack.ofy>")
+		os.Exit(1)
+	}
+
+	stackPath := fs.Arg(0)
+
+	// Create validator with default module directory
+	v := validator.NewValidator("modules")
+
+	// Run validation
+	result, err := v.Validate(stackPath)
+	if err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+
+	// Print results
+	validator.PrintResult(result, stackPath)
+
+	if !result.Valid {
+		os.Exit(1)
+	}
+
+	return nil
 }
 
 func runOnboard(args []string) error {
@@ -268,7 +308,19 @@ func runApply(args []string) error {
 	natsToken := fs.String("nats-token", "", "NATS authentication token")
 	fromEntry := fs.String("from", "", "Start from named entry")
 	untilEntry := fs.String("until", "", "Stop after named entry")
+	verbose := fs.Bool("verbose", false, "Show detailed task execution info")
+	verboseShort := fs.Bool("v", false, "Show detailed task execution info (short)")
+	debug := fs.Bool("debug", false, "Show full execution trace")
+	debugShort := fs.Bool("d", false, "Show full execution trace (short)")
 	fs.Parse(args)
+
+	// Combine short and long flags
+	isVerbose := *verbose || *verboseShort
+	isDebug := *debug || *debugShort
+	// Debug implies verbose
+	if isDebug {
+		isVerbose = true
+	}
 
 	if fs.NArg() < 1 {
 		fmt.Println("Usage: froyo apply <stack.ofy> [--nats-server <url>] [--nats-token <token>] [--from <name>] [--until <name>]")
@@ -383,6 +435,10 @@ func runApply(args []string) error {
 
 	// Execute stack
 	exec := executor.NewExecutor(stack, inventory)
+
+	// Set verbose and debug modes
+	exec.SetVerbose(isVerbose)
+	exec.SetDebug(isDebug)
 
 	// Set agent executor if agent mode is used
 	if agentExec != nil {

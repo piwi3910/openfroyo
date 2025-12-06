@@ -40,6 +40,7 @@ type Stack struct {
 	Inventory []string               `yaml:"inventory"`
 	Defaults  map[string]interface{} `yaml:"defaults,omitempty"`
 	Run       []RunEntry             `yaml:"run"`
+	Handlers  []Handler              `yaml:"handlers,omitempty"` // Handlers triggered by notify
 }
 
 // RunEntry represents either a module invocation or a task block
@@ -50,11 +51,35 @@ type RunEntry struct {
 	Vars     map[string]interface{} `yaml:"vars,omitempty"`
 	Strategy string                 `yaml:"strategy,omitempty"` // "serial" or "parallel"
 	Tasks    []Task                 `yaml:"tasks,omitempty"`    // Inline task block
+	When     string                 `yaml:"when,omitempty"`     // Conditional expression
+	Loop     interface{}            `yaml:"loop,omitempty"`     // Loop items (list or variable reference)
+	Register string                 `yaml:"register,omitempty"` // Variable name to store result
+	Notify   []string               `yaml:"notify,omitempty"`   // Handlers to notify on change
 }
 
 // Task represents an inline WASM task within a task block
 type Task struct {
+	Name     string                 `yaml:"name"`
+	Module   string                 `yaml:"module"`           // Module name or direct WASM path
+	Vars     map[string]interface{} `yaml:"vars,omitempty"`
+	When     string                 `yaml:"when,omitempty"`     // Conditional expression
+	Loop     interface{}            `yaml:"loop,omitempty"`     // Loop items (list or variable reference)
+	Register string                 `yaml:"register,omitempty"` // Variable name to store result
+	Notify   []string               `yaml:"notify,omitempty"`   // Handlers to notify on change
+}
+
+// Handler represents a handler that runs when notified
+type Handler struct {
 	Name   string                 `yaml:"name"`
-	Module string                 `yaml:"module"`           // Module name or direct WASM path
+	Module string                 `yaml:"module"`
+	Hosts  []string               `yaml:"hosts,omitempty"`
 	Vars   map[string]interface{} `yaml:"vars,omitempty"`
+}
+
+// TaskResult represents the result of a task execution
+type TaskResult struct {
+	Status  string                 `json:"status"`  // "ok", "changed", "failed", "skipped"
+	Message string                 `json:"message"`
+	Facts   map[string]interface{} `json:"facts"`
+	Changed bool                   `json:"changed"`
 }
