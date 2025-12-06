@@ -4,14 +4,30 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 
 	"github.com/piwi3910/openfroyo/internal/parser"
+)
+
+// HostKeyMode defines the SSH host key checking behavior
+type HostKeyMode string
+
+const (
+	// HostKeyModeStrict fails if the host key is not in known_hosts
+	HostKeyModeStrict HostKeyMode = "strict"
+	// HostKeyModeWarn warns but allows connection if host key is not in known_hosts
+	HostKeyModeWarn HostKeyMode = "warn"
+	// HostKeyModeIgnore ignores host key validation (insecure, for development only)
+	HostKeyModeIgnore HostKeyMode = "ignore"
+	// HostKeyModeAutoAdd automatically adds unknown keys to known_hosts
+	HostKeyModeAutoAdd HostKeyMode = "auto_add"
 )
 
 // Client represents an SSH client to a remote host
@@ -40,11 +56,150 @@ type TaskOutput struct {
 	Facts   map[string]interface{} `json:"facts"`
 }
 
+// getKnownHostsPath returns the path to the known_hosts file
+func getKnownHostsPath(customPath string) string {
+	if customPath != "" {
+		return customPath
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(homeDir, ".ssh", "known_hosts")
+}
+
+// createHostKeyCallback creates the appropriate host key callback based on mode
+func createHostKeyCallback(host parser.Host) (ssh.HostKeyCallback, error) {
+	mode := HostKeyMode(host.SSHHostKeyMode)
+	if mode == "" {
+		mode = HostKeyModeWarn // Default to warn mode
+	}
+
+	knownHostsPath := getKnownHostsPath(host.SSHKnownHostsFile)
+
+	switch mode {
+	case HostKeyModeIgnore:
+		return ssh.InsecureIgnoreHostKey(), nil
+
+	case HostKeyModeStrict:
+		if knownHostsPath == "" {
+			return nil, fmt.Errorf("known_hosts file path required for strict mode")
+		}
+		callback, err := knownhosts.New(knownHostsPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read known_hosts: %w", err)
+		}
+		return callback, nil
+
+	case HostKeyModeAutoAdd:
+		return createAutoAddCallback(knownHostsPath), nil
+
+	case HostKeyModeWarn:
+		fallthrough
+	default:
+		return createWarnCallback(knownHostsPath), nil
+	}
+}
+
+// createWarnCallback creates a callback that warns about unknown keys but allows connection
+func createWarnCallback(knownHostsPath string) ssh.HostKeyCallback {
+	var knownHostsCallback ssh.HostKeyCallback
+
+	if knownHostsPath != "" {
+		if _, err := os.Stat(knownHostsPath); err == nil {
+			callback, err := knownhosts.New(knownHostsPath)
+			if err == nil {
+				knownHostsCallback = callback
+			}
+		}
+	}
+
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		if knownHostsCallback != nil {
+			err := knownHostsCallback(hostname, remote, key)
+			if err == nil {
+				return nil // Key is known
+			}
+			// Key is unknown or changed - warn but allow
+			fmt.Printf("WARNING: Host key for %s is not in known_hosts or has changed\n", hostname)
+			fmt.Printf("  Fingerprint: %s\n", ssh.FingerprintSHA256(key))
+		} else {
+			fmt.Printf("WARNING: No known_hosts file found, accepting host key for %s\n", hostname)
+			fmt.Printf("  Fingerprint: %s\n", ssh.FingerprintSHA256(key))
+		}
+		return nil
+	}
+}
+
+// createAutoAddCallback creates a callback that automatically adds unknown keys
+func createAutoAddCallback(knownHostsPath string) ssh.HostKeyCallback {
+	var knownHostsCallback ssh.HostKeyCallback
+
+	if knownHostsPath != "" {
+		if _, err := os.Stat(knownHostsPath); err == nil {
+			callback, err := knownhosts.New(knownHostsPath)
+			if err == nil {
+				knownHostsCallback = callback
+			}
+		}
+	}
+
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		if knownHostsCallback != nil {
+			err := knownHostsCallback(hostname, remote, key)
+			if err == nil {
+				return nil // Key is known
+			}
+		}
+
+		// Add the key to known_hosts
+		if knownHostsPath != "" {
+			if err := addHostKey(knownHostsPath, hostname, key); err != nil {
+				fmt.Printf("WARNING: Failed to add host key to known_hosts: %v\n", err)
+			} else {
+				fmt.Printf("Added host key for %s to known_hosts\n", hostname)
+			}
+		}
+		return nil
+	}
+}
+
+// addHostKey adds a host key to the known_hosts file
+func addHostKey(knownHostsPath, hostname string, key ssh.PublicKey) error {
+	// Ensure .ssh directory exists
+	sshDir := filepath.Dir(knownHostsPath)
+	if err := os.MkdirAll(sshDir, 0700); err != nil {
+		return fmt.Errorf("failed to create .ssh directory: %w", err)
+	}
+
+	// Open file for appending
+	f, err := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open known_hosts: %w", err)
+	}
+	defer f.Close()
+
+	// Format the entry
+	line := knownhosts.Line([]string{hostname}, key)
+
+	// Write the entry
+	if _, err := f.WriteString(line + "\n"); err != nil {
+		return fmt.Errorf("failed to write to known_hosts: %w", err)
+	}
+
+	return nil
+}
+
 // NewClient creates a new SSH client
 func NewClient(host parser.Host) (*Client, error) {
+	hostKeyCallback, err := createHostKeyCallback(host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create host key callback: %w", err)
+	}
+
 	config := &ssh.ClientConfig{
 		User:            host.SSHUser,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // For MVP - should validate in production
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	// Add authentication method

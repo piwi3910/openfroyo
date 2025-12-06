@@ -11,6 +11,7 @@ import (
 	orchestratorExecutor "github.com/piwi3910/openfroyo/internal/orchestrator/executor"
 	"github.com/piwi3910/openfroyo/internal/parser"
 	sshclient "github.com/piwi3910/openfroyo/internal/ssh"
+	"github.com/piwi3910/openfroyo/internal/template"
 )
 
 // Executor executes a stack
@@ -43,32 +44,105 @@ func (e *Executor) Execute(runnerPath string) error {
 	for i, entry := range e.stack.Run {
 		fmt.Printf("[%d/%d] %s\n", i+1, len(e.stack.Run), entry.Name)
 
-		if entry.Module == "" {
-			return fmt.Errorf("module not specified for run entry: %s", entry.Name)
-		}
-
-		// Resolve hosts
-		hosts := entry.Hosts
-		if len(hosts) == 0 {
-			return fmt.Errorf("no hosts specified for run entry: %s", entry.Name)
-		}
-
-		resolvedHosts, err := e.inventory.ResolveHosts(hosts)
-		if err != nil {
-			return fmt.Errorf("failed to resolve hosts: %w", err)
-		}
-
-		// Execute on each host
-		for _, hostName := range resolvedHosts {
-			if err := e.executeOnHost(hostName, entry, runnerPath); err != nil {
-				return fmt.Errorf("failed on host %s: %w", hostName, err)
+		// Check if this is a task block or module invocation
+		if len(entry.Tasks) > 0 {
+			// Task block: execute inline tasks
+			if err := e.executeTaskBlock(entry, runnerPath); err != nil {
+				return err
 			}
+		} else if entry.Module != "" {
+			// Module invocation
+			// Resolve hosts
+			hosts := entry.Hosts
+			if len(hosts) == 0 {
+				return fmt.Errorf("no hosts specified for run entry: %s", entry.Name)
+			}
+
+			resolvedHosts, err := e.inventory.ResolveHosts(hosts)
+			if err != nil {
+				return fmt.Errorf("failed to resolve hosts: %w", err)
+			}
+
+			// Execute on each host
+			for _, hostName := range resolvedHosts {
+				if err := e.executeOnHost(hostName, entry, runnerPath); err != nil {
+					return fmt.Errorf("failed on host %s: %w", hostName, err)
+				}
+			}
+		} else {
+			return fmt.Errorf("run entry '%s' must have either 'module' or 'tasks' specified", entry.Name)
 		}
 
 		fmt.Println()
 	}
 
 	fmt.Println("Stack execution completed successfully!")
+	return nil
+}
+
+// executeTaskBlock executes an inline task block
+func (e *Executor) executeTaskBlock(entry parser.RunEntry, runnerPath string) error {
+	// Resolve hosts
+	hosts := entry.Hosts
+	if len(hosts) == 0 {
+		return fmt.Errorf("no hosts specified for task block: %s", entry.Name)
+	}
+
+	resolvedHosts, err := e.inventory.ResolveHosts(hosts)
+	if err != nil {
+		return fmt.Errorf("failed to resolve hosts: %w", err)
+	}
+
+	// Execute each task in the block on each host
+	for _, hostName := range resolvedHosts {
+		host, err := e.inventory.GetHost(hostName)
+		if err != nil {
+			return err
+		}
+
+		mode := host.Mode
+		if mode == "" {
+			mode = "ssh"
+		}
+
+		for j, task := range entry.Tasks {
+			fmt.Printf("  Task [%d/%d] %s\n", j+1, len(entry.Tasks), task.Name)
+
+			// Create a temporary RunEntry for this task
+			taskEntry := parser.RunEntry{
+				Name:   task.Name,
+				Module: task.Module,
+				Hosts:  []string{hostName},
+				Vars:   make(map[string]interface{}),
+			}
+
+			// Merge vars: defaults -> entry vars -> task vars
+			for k, v := range e.stack.Defaults {
+				taskEntry.Vars[k] = v
+			}
+			for k, v := range entry.Vars {
+				taskEntry.Vars[k] = v
+			}
+			for k, v := range task.Vars {
+				taskEntry.Vars[k] = v
+			}
+
+			// Execute based on mode
+			switch mode {
+			case "agent":
+				if err := e.executeOnAgent(hostName, host, taskEntry); err != nil {
+					return fmt.Errorf("task '%s' failed on host %s: %w", task.Name, hostName, err)
+				}
+			case "ssh":
+				if err := e.executeOnSSH(hostName, host, taskEntry, runnerPath); err != nil {
+					return fmt.Errorf("task '%s' failed on host %s: %w", task.Name, hostName, err)
+				}
+			default:
+				return fmt.Errorf("unknown execution mode: %s", mode)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -123,6 +197,28 @@ func (e *Executor) executeOnSSH(hostName string, host parser.Host, entry parser.
 	}
 	for k, v := range entry.Vars {
 		vars[k] = v
+	}
+
+	// Process template expressions in variables
+	mode := host.Mode
+	if mode == "" {
+		mode = "ssh"
+	}
+	templateCtx := &template.Context{
+		Vars: vars,
+		Host: template.HostContext{
+			Name:       hostName,
+			SSHHost:    host.SSHHost,
+			SSHPort:    host.SSHPort,
+			SSHUser:    host.SSHUser,
+			Datacenter: host.Datacenter,
+			AgentID:    host.AgentID,
+			Mode:       mode,
+		},
+	}
+	vars, err = template.ProcessVars(vars, templateCtx)
+	if err != nil {
+		return fmt.Errorf("failed to process template variables: %w", err)
 	}
 
 	// Special handling for script module: read local script file
@@ -242,6 +338,25 @@ func (e *Executor) executeOnAgent(hostName string, host parser.Host, entry parse
 	}
 	for k, v := range entry.Vars {
 		vars[k] = v
+	}
+
+	// Process template expressions in variables
+	templateCtx := &template.Context{
+		Vars: vars,
+		Host: template.HostContext{
+			Name:       hostName,
+			SSHHost:    host.SSHHost,
+			SSHPort:    host.SSHPort,
+			SSHUser:    host.SSHUser,
+			Datacenter: host.Datacenter,
+			AgentID:    host.AgentID,
+			Mode:       "agent",
+		},
+	}
+	var err error
+	vars, err = template.ProcessVars(vars, templateCtx)
+	if err != nil {
+		return fmt.Errorf("failed to process template variables: %w", err)
 	}
 
 	// Execute task on agent via NATS
